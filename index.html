@@ -11,6 +11,10 @@
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/ShaderPass.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/CopyShader.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tween.js/16.3.5/Tween.min.js"></script>
+    
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/LuminosityHighPassShader.js"></script>
+
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap');
 
@@ -46,7 +50,7 @@
         #cosmic-scene.grabbing {
             cursor: grabbing;
         }
-       
+        
         /* --- UI Elements --- */
         header {
             position: absolute;
@@ -161,7 +165,7 @@
             padding-left: 1.25rem;
             margin: 0.5rem 0 0 0;
         }
-       
+        
         .details-content li {
             margin-bottom: 0.5rem;
         }
@@ -285,10 +289,10 @@
         <div class="nav-item" data-target="Contact">Contact</div>
     </nav>
 
-    <div class="instructions">
+    <div class="instructions" id="instructions-text">
         Click a section or drag to explore
     </div>
-   
+    
     <div class="details-panel" id="details-panel">
         <button class="close-button" id="close-details">&times;</button>
         <div id="details-content-container"></div>
@@ -299,6 +303,7 @@
         let scene, camera, renderer, composer, wormholePass, raycaster, mouse;
         const celestialObjects = new Map();
         const comets = [];
+        let careerComet, careerCometPath;
         let isDragging = false, isWarping = false;
         let previousMousePosition = { x: 0, y: 0 };
         const canvas = document.getElementById('cosmic-scene');
@@ -313,6 +318,7 @@
         const detailsContentContainer = document.getElementById('details-content-container');
         const navItems = document.querySelectorAll('.nav-item');
         const closeButton = document.getElementById('close-details');
+        const instructionsText = document.getElementById('instructions-text');
 
         // --- RESUME DATA ---
         const resumeData = { 
@@ -327,8 +333,14 @@
                              </div>
                              <div id="skills-details-container"></div>
                          </div>`,
-                "Languages & Frameworks": `<h4>Languages & Frameworks</h4><p>Python, C/C++, PyTorch, TensorFlow, FastAPI, Flask</p>`,
-                "Areas of Expertise": `<h4>Areas of Expertise</h4><p>Embedded Systems (RTOS, Firmware), AI/ML (LLMs, Computer Vision), Backend Development (REST APIs, Microservices), System Optimization</p>`
+                "Languages & Frameworks": {
+                    "title": "Languages & Frameworks",
+                    "list": ["Python", "C/C++", "PyTorch", "TensorFlow", "FastAPI", "Flask"]
+                },
+                "Areas of Expertise": {
+                    "title": "Areas of Expertise",
+                    "list": ["Embedded Systems", "AI/ML", "Backend Dev", "Optimization"]
+                }
             },
             "Experience": {
                 "main": `<h3>Experience</h3>
@@ -346,7 +358,7 @@
             "Projects": {
                 "main": `<h3>Projects</h3>
                          <div class="details-content">
-                             <p>An asteroid field of my creations. Scan an asteroid or select a project below.</p>
+                             <p>A creative nebula where my projects are born. Scan a protostar or select a project below.</p>
                              <div class="projects-nav">
                                  <button class="project-btn" data-project-key="Neural Network for Image Recognition">Neural Network</button>
                                  <button class="project-btn" data-project-key="Smart Home Automation System">Smart Home</button>
@@ -362,7 +374,36 @@
 
         // --- FACTORY FOR TEXTURES & SHADERS ---
         const Factory = {
-            createTexture: function(c1, c2, t = 'planet') { const cv = document.createElement('canvas'); cv.width=512; cv.height=256; const ctx = cv.getContext('2d'); ctx.fillStyle=c1; ctx.fillRect(0,0,512,256); const i=t==='bump'?2000:30; for(let n=0;n<i;n++){ const x=Math.random()*512, y=Math.random()*256, r=t==='bump'?Math.random()*3:Math.random()*50+10; ctx.fillStyle=`rgba(${c2.r},${c2.g},${c2.b},${Math.random()*0.5+0.5})`; ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2); ctx.fill(); } return new THREE.CanvasTexture(cv); },
+            createTexture: function(c1, c2, t = 'planet') { 
+                const cv = document.createElement('canvas'); 
+                cv.width=512; cv.height=256; 
+                const ctx = cv.getContext('2d'); 
+                ctx.fillStyle=c1; 
+                ctx.fillRect(0,0,512,256); 
+                const i=t==='bump'?2000:30; 
+                for(let n=0;n<i;n++){ 
+                    const x=Math.random()*512, y=Math.random()*256, r=t==='bump'?Math.random()*3:Math.random()*50+10; 
+                    ctx.fillStyle=`rgba(${c2.r},${c2.g},${c2.b},${Math.random()*0.5+0.5})`; 
+                    ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2); ctx.fill(); 
+                } 
+                if (t === 'experience') {
+                    ctx.strokeStyle = 'rgba(200, 225, 255, 0.3)';
+                    ctx.lineWidth = 1;
+                    ctx.shadowColor = 'rgba(220, 235, 255, 0.8)';
+                    ctx.shadowBlur = 10;
+                    for (let j = 0; j < 5; j++) {
+                        ctx.beginPath();
+                        ctx.moveTo(Math.random() * 512, Math.random() * 256);
+                        ctx.bezierCurveTo(
+                            Math.random() * 512, Math.random() * 256,
+                            Math.random() * 512, Math.random() * 256,
+                            Math.random() * 512, Math.random() * 256
+                        );
+                        ctx.stroke();
+                    }
+                }
+                return new THREE.CanvasTexture(cv); 
+            },
             createRingTexture: function() { const cv=document.createElement('canvas');cv.width=1;cv.height=256;const ctx=cv.getContext('2d');const g=ctx.createLinearGradient(0,0,0,256);g.addColorStop(0.0,'rgba(150,130,110,0.8)');g.addColorStop(0.1,'rgba(150,130,110,0.6)');g.addColorStop(0.6,'rgba(150,130,110,0.2)');g.addColorStop(1.0,'rgba(150,130,110,0.0)');ctx.fillStyle=g;ctx.fillRect(0,0,1,256);return new THREE.CanvasTexture(cv);},
             createAtmosphereMaterial: function() { return new THREE.ShaderMaterial({uniforms:{c:{value:0.7},p:{value:4.0}},vertexShader:`varying vec3 vNormal;void main(){vNormal=normalize(normalMatrix*normal);gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}`,fragmentShader:`varying vec3 vNormal;void main(){float i=pow(0.7-dot(vNormal,vec3(0.0,0.0,1.0)),4.0);gl_FragColor=vec4(0.5,0.65,1.0,1.0)*i;}`,side:THREE.BackSide,blending:THREE.AdditiveBlending,transparent:true}); },
             createNebulaTexture: function(c1,c2) { const cv=document.createElement('canvas');cv.width=512;cv.height=512;const ctx=cv.getContext('2d');const g=ctx.createRadialGradient(256,256,0,256,256,256);g.addColorStop(0,`rgba(${c1.r},${c1.g},${c1.b},0.4)`);g.addColorStop(0.2,`rgba(${c2.r},${c2.g},${c2.b},0.2)`);g.addColorStop(1,'rgba(0,0,0,0)');ctx.fillStyle=g;ctx.fillRect(0,0,512,512);for(let i=0;i<50;i++){ctx.fillStyle=`rgba(255,255,255,${Math.random()*0.05})`;ctx.beginPath();ctx.arc(Math.random()*512,Math.random()*512,Math.random()*3,0,Math.PI*2);ctx.fill();}return new THREE.CanvasTexture(cv);},
@@ -455,7 +496,7 @@
                 }
             `
         };
-       
+        
         // --- CREATION FUNCTIONS ---
         function createGalaxy() {
             const v=[]; for(let i=0;i<15000;i++){v.push(THREE.MathUtils.randFloatSpread(10000),THREE.MathUtils.randFloatSpread(10000),THREE.MathUtils.randFloatSpread(10000));} const g=new THREE.BufferGeometry(); g.setAttribute('position',new THREE.Float32BufferAttribute(v,3)); const m=new THREE.PointsMaterial({color:0xbbccff,size:1.5,transparent:true,opacity:0.8}); starfield=new THREE.Points(g,m); scene.add(starfield);
@@ -467,7 +508,14 @@
 
         function createSun() {
             const sunGroup = new THREE.Group();
-            const sL=new THREE.PointLight(0xffddaa,1.5,6000); 
+            const sL=new THREE.PointLight(0xffddaa, 1.2, 6000); 
+            
+            sL.castShadow = true;
+            sL.shadow.mapSize.width = 2048; 
+            sL.shadow.mapSize.height = 2048;
+            sL.shadow.camera.near = 10;
+            sL.shadow.camera.far = 5000;
+
             const sG=new THREE.SphereGeometry(25,64,64); 
             const sM=new THREE.ShaderMaterial(SunShader);
             const s=new THREE.Mesh(sG,sM); 
@@ -494,31 +542,32 @@
         function createSkillsConstellation() {
             const constellationGroup = new THREE.Group();
             const interactiveNodes = [];
-            const starMaterial = new THREE.SpriteMaterial({ map: Factory.createStarTexture(), blending: THREE.AdditiveBlending, transparent: true, opacity: 0.9 });
+            const starMaterial = new THREE.SpriteMaterial({ map: Factory.createStarTexture(), blending: THREE.AdditiveBlending, transparent: true, opacity: 0.9, color: 0xaaccff });
 
             const star1 = new THREE.Sprite(starMaterial.clone());
-            star1.position.set(-15, 5, 0);
-            star1.scale.set(10, 10, 1);
+            star1.position.set(-20, 10, 0);
+            star1.scale.set(12, 12, 1);
             star1.userData.skillKey = "Languages & Frameworks";
             star1.name = "skillNode";
             constellationGroup.add(star1);
             interactiveNodes.push(star1);
 
             const star2 = new THREE.Sprite(starMaterial.clone());
-            star2.position.set(15, -5, 0);
-            star2.scale.set(10, 10, 1);
+            star2.position.set(20, -10, 0);
+            star2.scale.set(12, 12, 1);
             star2.userData.skillKey = "Areas of Expertise";
             star2.name = "skillNode";
             constellationGroup.add(star2);
             interactiveNodes.push(star2);
 
-            const lineMaterial = new THREE.LineBasicMaterial({ color: 0xaaaaff, transparent: true, opacity: 0.3, blending: THREE.AdditiveBlending });
+            const lineMaterial = new THREE.LineBasicMaterial({ color: 0xaaaaff, transparent: true, opacity: 0.2, blending: THREE.AdditiveBlending });
             const points = [star1.position, star2.position];
             const lineGeometry = new THREE.BufferGeometry().setFromPoints(points);
             const line = new THREE.Line(lineGeometry, lineMaterial);
             constellationGroup.add(line);
 
             constellationGroup.userData.interactiveNodes = interactiveNodes;
+            constellationGroup.userData.subStars = []; // To hold the smaller skill stars
             constellationGroup.position.set(80, 0, 0);
             constellationGroup.visible = false;
             celestialObjects.set('Skills', constellationGroup);
@@ -562,12 +611,38 @@
             planetGroup.userData.interactiveNodes = interactiveNodes;
         }
         
-        function createProjectsAsteroidField() {
-            const fieldGroup = new THREE.Group();
-            fieldGroup.name = "projectsField";
+        // MERGED: Function now creates nebula, asteroids, and protostars
+        function createProjectNebula() {
+            const nebulaGroup = new THREE.Group();
+            nebulaGroup.name = "projectsField";
             const interactiveNodes = [];
-            const fieldRadius = 30;
 
+            // Create background gas clouds
+            const cloudColors = [
+                { c1: { r: 100, g: 80, b: 200 }, c2: { r: 50, g: 40, b: 150 } },
+                { c1: { r: 200, g: 80, b: 120 }, c2: { r: 150, g: 40, b: 80 } },
+            ];
+            for (let i = 0; i < 10; i++) {
+                const color = cloudColors[i % cloudColors.length];
+                const spriteMat = new THREE.SpriteMaterial({
+                    map: Factory.createNebulaTexture(color.c1, color.c2),
+                    blending: THREE.AdditiveBlending,
+                    transparent: true,
+                    opacity: 0.3 + Math.random() * 0.2
+                });
+                const sprite = new THREE.Sprite(spriteMat);
+                sprite.position.set(
+                    (Math.random() - 0.5) * 50,
+                    (Math.random() - 0.5) * 30,
+                    (Math.random() - 0.5) * 20 - 10
+                );
+                const scale = Math.random() * 40 + 20;
+                sprite.scale.set(scale, scale, 1);
+                nebulaGroup.add(sprite);
+            }
+
+            // Create non-interactive asteroids within the nebula
+            const fieldRadius = 30;
             for (let i = 0; i < 30; i++) {
                 const size = Math.random() * 1.5 + 0.5;
                 const geometry = new THREE.IcosahedronGeometry(size, 0);
@@ -576,36 +651,38 @@
                 const pos = new THREE.Vector3( (Math.random() - 0.5) * fieldRadius, (Math.random() - 0.5) * fieldRadius, (Math.random() - 0.5) * fieldRadius );
                 asteroid.position.copy(pos);
                 asteroid.rotation.set(Math.random() * Math.PI, Math.random() * Math.PI, Math.random() * Math.PI);
-                fieldGroup.add(asteroid);
+                nebulaGroup.add(asteroid);
             }
 
-            const interactiveGeo = new THREE.IcosahedronGeometry(2.5, 0);
-            
-            const interactiveMat1 = new THREE.MeshStandardMaterial({ color: 0xffaa00, emissive: 0xcc8800, emissiveIntensity: 0.4, flatShading: true });
-            const project1 = new THREE.Mesh(interactiveGeo, interactiveMat1);
-            project1.position.set(-12, 6, 0);
+            // Create interactive protostars for projects
+            const protoStarMat1 = new THREE.SpriteMaterial({ map: Factory.createStarTexture(), color: 0xffaa00, blending: THREE.AdditiveBlending });
+            const project1 = new THREE.Sprite(protoStarMat1);
+            project1.scale.set(15, 15, 1);
+            project1.position.set(-15, 5, 0);
             project1.userData.projectKey = "Neural Network for Image Recognition";
             project1.name = "projectNode";
-            fieldGroup.add(project1);
+            nebulaGroup.add(project1);
             interactiveNodes.push(project1);
-
-            const interactiveMat2 = new THREE.MeshStandardMaterial({ color: 0x00aaff, emissive: 0x0088cc, emissiveIntensity: 0.4, flatShading: true });
-            const project2 = new THREE.Mesh(interactiveGeo, interactiveMat2);
-            project2.position.set(12, -6, 0);
+            
+            const protoStarMat2 = new THREE.SpriteMaterial({ map: Factory.createStarTexture(), color: 0x00aaff, blending: THREE.AdditiveBlending });
+            const project2 = new THREE.Sprite(protoStarMat2);
+            project2.scale.set(15, 15, 1);
+            project2.position.set(15, -5, 0);
             project2.userData.projectKey = "Smart Home Automation System";
             project2.name = "projectNode";
-            fieldGroup.add(project2);
+            nebulaGroup.add(project2);
             interactiveNodes.push(project2);
 
-            fieldGroup.userData.interactiveNodes = interactiveNodes;
-            fieldGroup.userData.orbit = 180;
-            fieldGroup.userData.speed = 0.001;
-            fieldGroup.userData.angle = Math.random() * Math.PI * 2;
-            fieldGroup.userData.internalRotation = new THREE.Vector3(0.0002, 0.0005, 0.0001);
+            nebulaGroup.userData.interactiveNodes = interactiveNodes;
+            // Set up orbiting properties
+            nebulaGroup.userData.orbit = 180;
+            nebulaGroup.userData.speed = 0.001;
+            nebulaGroup.userData.angle = Math.random() * Math.PI * 2;
+            nebulaGroup.userData.internalRotation = new THREE.Vector3(0.0002, 0.0005, 0.0001);
 
-            fieldGroup.visible = false;
-            celestialObjects.set('Projects', fieldGroup);
-            scene.add(fieldGroup);
+            nebulaGroup.visible = false;
+            celestialObjects.set('Projects', nebulaGroup);
+            scene.add(nebulaGroup);
         }
 
         function createEducationDataStream(planetGroup) {
@@ -644,9 +721,9 @@
 
         function createPlanets() {
             const pD=[
-                {n:'Experience',r:7,o:130,s:0.002,c1:'#2e5a88',c2:{r:180,g:220,b:255},hC:true},
+                {n:'Experience',r:7,o:130,s:0.002,c1:'#2e5a88',c2:{r:180,g:220,b:255},hC:true, specialTexture: 'experience'},
                 {n:'Education',r:12,o:280,s:0.0005,c1:'#d8ca9d',c2:{r:200,g:180,b:140}},
-                {n:'Contact',r:9,o:380,s:0.0003,c1:'#c7a584',c2:{r:150,g:130,b:110},hR:true}
+                {n:'Contact',r:9,o:380,s:0.0003,c1:'#c7a584',c2:{r:150,g:130,b:110},hR:true, specialEffect: 'beacon'},
             ];
             const decorativePlanets = [
                 {n:'Deco1', r:3, o:55, s:0.005, c1:'#a0522d', c2:{r:188,g:143,b:143}},
@@ -658,20 +735,36 @@
 
             allPlanets.forEach(d=>{
                 const pG=new THREE.Group();
+                const textureType = d.specialTexture || 'planet';
                 const pGeo=new THREE.SphereGeometry(d.r,32,32);
-                const pMat=new THREE.MeshStandardMaterial({map:Factory.createTexture(d.c1,d.c2),bumpMap:Factory.createTexture('#808080',{r:0,g:0,b:0},'bump'),bumpScale:0.05,roughness:0.8});
+                const pMat=new THREE.MeshStandardMaterial({map:Factory.createTexture(d.c1,d.c2, textureType),bumpMap:Factory.createTexture('#808080',{r:0,g:0,b:0},'bump'),bumpScale:0.05,roughness:0.8});
                 const p=new THREE.Mesh(pGeo,pMat);
                 p.rotation.y=Math.random()*Math.PI*2;
+
+                p.castShadow = true;
+                p.receiveShadow = true;
+
                 pG.add(p);
                 const a=new THREE.Mesh(new THREE.SphereGeometry(d.r*1.05,32,32),Factory.createAtmosphereMaterial());
                 pG.add(a);
                 if(d.hC){const cG=new THREE.SphereGeometry(d.r+0.2,32,32);const cM=new THREE.MeshStandardMaterial({alphaMap:Factory.createTexture('black',{r:255,g:255,b:255}),transparent:true,opacity:0.6});const c=new THREE.Mesh(cG,cM);c.userData.isCloud=true;pG.add(c);}
-                if(d.hR){const rG=new THREE.RingGeometry(d.r+2,d.r+7,64);const rM=new THREE.MeshBasicMaterial({map:Factory.createRingTexture(),side:THREE.DoubleSide,transparent:true,opacity:0.8});const r=new THREE.Mesh(rG,rM);r.rotation.x=Math.PI*0.55;pG.add(r);}
+                if(d.hR){const rG=new THREE.RingGeometry(d.r+2,d.r+7,64);const rM=new THREE.MeshBasicMaterial({map:Factory.createRingTexture(),side:THREE.DoubleSide,transparent:true,opacity:0.8});const r=new THREE.Mesh(rG,rM);r.rotation.x=Math.PI*0.55;
+                
+                r.receiveShadow = true;
+
+                pG.add(r);}
                 pG.userData.orbit=d.o;pG.userData.speed=d.s;pG.userData.angle=Math.random()*Math.PI*2;
                 
                 if (d.n === 'Experience') createExperienceTimeline(pG);
                 if (d.n === 'Education') createEducationDataStream(pG);
-                // REMOVED: Aurora is no longer created
+                if (d.specialEffect === 'beacon') {
+                    const beaconGeo = new THREE.SphereGeometry(d.r + 1.5, 32, 32);
+                    const beaconMat = new THREE.MeshBasicMaterial({color: 0xaaccff, transparent: true, opacity: 0, blending: THREE.AdditiveBlending});
+                    const beacon = new THREE.Mesh(beaconGeo, beaconMat);
+                    pG.add(beacon);
+                    pG.userData.beacon = beacon;
+                }
+
 
                 scene.add(pG);
                 celestialObjects.set(d.n,pG);
@@ -681,7 +774,7 @@
         function createAsteroidBelt() {
             const aB=new THREE.Group(); const bO={iR:220,oR:250,th:15,c:2000}; for(let i=0;i<bO.c;i++){const g=new THREE.IcosahedronGeometry(Math.random()*0.5+0.1,0);const m=new THREE.MeshStandardMaterial({color:0x999999,flatShading:true,roughness:0.8});const r=new THREE.Mesh(g,m);const a=Math.random()*Math.PI*2;const rad=THREE.MathUtils.randFloat(bO.iR,bO.oR);r.position.set(Math.cos(a)*rad,(Math.random()-0.5)*bO.th,Math.sin(a)*rad);r.rotation.set(Math.random()*Math.PI,Math.random()*Math.PI,Math.random()*Math.PI);aB.add(r);} scene.add(aB); celestialObjects.set('AsteroidBelt',aB);
         }
-
+        
         function createComets(count) {
             for (let i = 0; i < count; i++) {
                 const comet = new THREE.Group();
@@ -689,14 +782,14 @@
                 const headMaterial = new THREE.MeshBasicMaterial({ color: 0xaaddff });
                 const head = new THREE.Mesh(headGeometry, headMaterial);
                 comet.add(head);
-               
+                
                 const tailCanvas = document.createElement('canvas'); tailCanvas.width = 2; tailCanvas.height = 128; const tailContext = tailCanvas.getContext('2d'); const gradient = tailContext.createLinearGradient(0, 0, 0, 128); gradient.addColorStop(0, 'rgba(170, 221, 255, 0.5)'); gradient.addColorStop(1, 'rgba(170, 221, 255, 0)'); tailContext.fillStyle = gradient; tailContext.fillRect(0, 0, 2, 128);
                 const tailMaterial = new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(tailCanvas), transparent: true, side: THREE.DoubleSide, blending: THREE.AdditiveBlending });
                 const tail = new THREE.Mesh(new THREE.PlaneGeometry(1, 20), tailMaterial);
-                tail.position.z = -10;
+                tail.position.z = 10; // Tail is behind the head
                 tail.rotation.x = Math.PI / 2;
                 comet.add(tail);
-               
+                
                 resetComet(comet);
                 scene.add(comet);
                 comets.push(comet);
@@ -707,12 +800,47 @@
             const distance = THREE.MathUtils.randFloat(1500, 3000);
             const angle = Math.random() * Math.PI * 2;
             const height = THREE.MathUtils.randFloat(-500, 500);
-           
+            
             comet.position.set(Math.cos(angle) * distance, height, Math.sin(angle) * distance);
+            
+            // BUG FIX: Make ambient comets fly in random directions, not just towards the sun
+            const target = new THREE.Vector3(
+                THREE.MathUtils.randFloatSpread(1000),
+                THREE.MathUtils.randFloatSpread(500),
+                THREE.MathUtils.randFloatSpread(1000)
+            );
+
             comet.userData.velocity = new THREE.Vector3()
-                .subVectors(new THREE.Vector3(0,0,0), comet.position)
+                .subVectors(target, comet.position)
                 .normalize()
                 .multiplyScalar(THREE.MathUtils.randFloat(2.0, 3.5));
+        }
+
+        function createCareerComet() {
+            careerComet = new THREE.Group();
+            const headGeometry = new THREE.SphereGeometry(2, 16, 16);
+            const headMaterial = new THREE.MeshBasicMaterial({ color: 0xffddaa });
+            const head = new THREE.Mesh(headGeometry, headMaterial);
+            careerComet.add(head);
+
+            const tailCanvas = document.createElement('canvas'); tailCanvas.width = 2; tailCanvas.height = 128; const tailContext = tailCanvas.getContext('2d'); const gradient = tailContext.createLinearGradient(0, 0, 0, 128); gradient.addColorStop(0, 'rgba(255, 220, 170, 0.7)'); gradient.addColorStop(1, 'rgba(255, 220, 170, 0)'); tailContext.fillStyle = gradient; tailContext.fillRect(0, 0, 2, 128);
+            const tailMaterial = new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(tailCanvas), transparent: true, side: THREE.DoubleSide, blending: THREE.AdditiveBlending });
+            const tail = new THREE.Mesh(new THREE.PlaneGeometry(3, 80), tailMaterial);
+            // BUG FIX: Position tail BEHIND the head
+            tail.position.z = -40; 
+            tail.rotation.x = Math.PI / 2;
+            careerComet.add(tail);
+
+            // Define the elliptical path
+            careerCometPath = new THREE.EllipseCurve(
+                0, 0,             // ax, aY
+                450, 300,         // xRadius, yRadius
+                0, 2 * Math.PI,   // aStartAngle, aEndAngle
+                false,            // aClockwise
+                Math.PI / 6       // aRotation
+            );
+            
+            scene.add(careerComet);
         }
 
         function createBlackHole() {
@@ -747,7 +875,7 @@
         function travelTo(targetName, isInitialLoad = false) {
             if (isWarping && !isInitialLoad) return;
             isWarping = true;
-           
+            
             celestialObjects.forEach(obj => {
                 if (obj.userData.hologram) obj.userData.hologram.visible = false;
                 if (obj.userData.dataStream) obj.userData.dataStream.visible = false;
@@ -756,7 +884,7 @@
 
             let finalCameraPos;
             let targetObjectForTravel;
-           
+            
             if (targetName === 'FreeRoam') {
                 focusedObject = null;
                 finalCameraPos = new THREE.Vector3(0, 100, 500);
@@ -771,7 +899,7 @@
                 if (targetName === 'Overview') {
                     offsetVec = new THREE.Vector3(0, 80, 450);
                 } else if (targetName === 'Skills' || targetName === 'Projects') {
-                    offsetVec = new THREE.Vector3(0, 0, 60); 
+                    offsetVec = new THREE.Vector3(0, 0, 80);
                 } else {
                     const mainChild = targetObjectForTravel.type === 'Group' ? targetObjectForTravel.children[0] : targetObjectForTravel;
                     const radius = mainChild.geometry.parameters.radius || 10;
@@ -810,7 +938,7 @@
             if (isInitialLoad) {
                 camera.position.copy(finalCameraPos);
                 if (targetName === 'Overview') {
-                     focusedObject = celestialObjects.get('Overview');
+                        focusedObject = celestialObjects.get('Overview');
                     setActiveNavItem('Overview');
                     showDetails('Overview');
                 }
@@ -831,7 +959,7 @@
             canvas.addEventListener('touchmove', onTouchMove, { passive: false });
             canvas.addEventListener('touchend', onTouchEnd);
             canvas.addEventListener('click', onCanvasClick);
-           
+            
             navItems.forEach(item => {
                 item.addEventListener('click', () => {
                     if (isWarping) return;
@@ -854,13 +982,13 @@
                 setActiveNavItem(null);
             });
         }
-       
+        
         function onMouseMove(event) {
             if (!isDragging || isWarping) return;
             const deltaX = event.clientX - previousMousePosition.x;
             const deltaY = event.clientY - previousMousePosition.y;
             const rotationSpeed = 0.005;
-           
+            
             if (focusedObject) {
                 const yAxis = new THREE.Vector3(0, 1, 0);
                 cameraOffset.applyAxisAngle(yAxis, -deltaX * rotationSpeed);
@@ -870,7 +998,7 @@
                 const quaternion = new THREE.Quaternion().setFromEuler(new THREE.Euler(deltaY * 0.002, deltaX * 0.002, 0, 'YXZ'));
                 camera.quaternion.multiplyQuaternions(quaternion, camera.quaternion);
             }
-           
+            
             previousMousePosition = { x: event.clientX, y: event.clientY };
         };
 
@@ -881,10 +1009,11 @@
             mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
             raycaster.setFromCamera(mouse, camera);
 
-            const intersects = raycaster.intersectObjects(focusedObject.userData.interactiveNodes);
+            const intersects = raycaster.intersectObjects(focusedObject.userData.interactiveNodes, true);
 
             if (intersects.length > 0) {
                 const clickedNode = intersects[0].object;
+                
                 if (clickedNode.name === "experienceNode") {
                     showExperienceSubDetail(clickedNode.userData.jobKey);
                 } else if (clickedNode.name === "skillNode") {
@@ -912,18 +1041,55 @@
         }
         
         function showSkillSubDetail(skillKey) {
+            const skillData = resumeData.Skills[skillKey];
             const detailContainer = document.getElementById('skills-details-container');
-            if (detailContainer) detailContainer.innerHTML = resumeData.Skills[skillKey];
+            if (detailContainer) {
+                 detailContainer.innerHTML = `<h4>${skillData.title}</h4><p>${skillData.list.join(', ')}</p>`;
+            }
 
             const buttons = detailsContentContainer.querySelectorAll('.skills-btn');
             buttons.forEach(btn => btn.classList.toggle('active', btn.dataset.skillKey === skillKey));
 
             const skillsConstellation = celestialObjects.get('Skills');
             if (skillsConstellation && skillsConstellation.userData.interactiveNodes) {
-                const nodeToPulse = skillsConstellation.userData.interactiveNodes.find(node => node.userData.skillKey === skillKey);
-                if (nodeToPulse) {
-                    new TWEEN.Tween(nodeToPulse.material).to({ opacity: 0.5 }, 150).easing(TWEEN.Easing.Quadratic.InOut).yoyo(true).repeat(1).start();
-                }
+                // Clear previous sub-stars
+                skillsConstellation.userData.subStars.forEach(star => skillsConstellation.remove(star));
+                skillsConstellation.userData.subStars = [];
+
+                const mainStar = skillsConstellation.userData.interactiveNodes.find(node => node.userData.skillKey === skillKey);
+                if (!mainStar) return;
+
+                // Create and animate new sub-stars
+                const subStarMaterial = new THREE.SpriteMaterial({ map: Factory.createStarTexture(), color: 0xffffff, blending: THREE.AdditiveBlending, transparent: true, opacity: 0.8 });
+                const numSubStars = skillData.list.length;
+                const angleStep = (Math.PI * 1.5) / (numSubStars - 1);
+                
+                skillData.list.forEach((skill, i) => {
+                    const subStar = new THREE.Sprite(subStarMaterial.clone());
+                    subStar.scale.set(0,0,1); // Start invisible
+                    subStar.position.copy(mainStar.position);
+                    
+                    const angle = - (Math.PI * 0.25) - (angleStep * i);
+                    const radius = 25;
+                    const targetPos = new THREE.Vector3(
+                        mainStar.position.x + radius * Math.cos(angle),
+                        mainStar.position.y + radius * Math.sin(angle),
+                        mainStar.position.z
+                    );
+
+                    skillsConstellation.add(subStar);
+                    skillsConstellation.userData.subStars.push(subStar);
+
+                    new TWEEN.Tween(subStar.position)
+                        .to(targetPos, 500 + i * 50)
+                        .easing(TWEEN.Easing.Exponential.Out)
+                        .start();
+                    
+                    new TWEEN.Tween(subStar.scale)
+                        .to({x: 5, y: 5, z: 1}, 500 + i * 50)
+                        .easing(TWEEN.Easing.Exponential.Out)
+                        .start();
+                });
             }
         }
 
@@ -938,9 +1104,8 @@
             if (projectsField && projectsField.userData.interactiveNodes) {
                 const nodeToPulse = projectsField.userData.interactiveNodes.find(node => node.userData.projectKey === projectKey);
                 if (nodeToPulse) {
-                    const originalIntensity = nodeToPulse.material.emissiveIntensity;
-                    new TWEEN.Tween(nodeToPulse.material)
-                        .to({ emissiveIntensity: originalIntensity + 0.5 }, 200)
+                   new TWEEN.Tween(nodeToPulse.material)
+                        .to({ opacity: 0.5 }, 200)
                         .easing(TWEEN.Easing.Quadratic.InOut)
                         .yoyo(true)
                         .repeat(1)
@@ -1015,7 +1180,25 @@
                 sun.userData.corona.material.opacity = 0.6 + Math.sin(elapsedTime * 0.5) * 0.2;
             }
 
+            if (starfield) {
+                starfield.rotation.y += 0.00002;
+            }
+
             nebulaeGroup.rotation.z += 0.0001;
+
+            if (careerComet && careerCometPath) {
+                const time = elapsedTime * 0.02;
+                const looptime = 1;
+                const t = (time % looptime) / looptime;
+                const point = careerCometPath.getPointAt(t);
+                
+                const next_t = ((time + 0.001) % looptime) / looptime;
+                const nextPoint = careerCometPath.getPointAt(next_t);
+
+                careerComet.position.set(point.x, 0, point.y);
+                // BUG FIX: Correctly orient the comet to face forward
+                careerComet.lookAt(new THREE.Vector3(nextPoint.x, 0, nextPoint.y));
+            }
 
             celestialObjects.forEach((obj, name) => {
                 if (obj.userData.speed) {
@@ -1023,6 +1206,7 @@
                     obj.position.x = Math.cos(obj.userData.angle) * obj.userData.orbit;
                     obj.position.z = Math.sin(obj.userData.angle) * obj.userData.orbit;
                     
+                    // MERGED: This now controls the internal rotation of the orbiting project nebula
                     if (name === 'Projects') {
                         obj.rotation.x += obj.userData.internalRotation.x;
                         obj.rotation.y += obj.userData.internalRotation.y;
@@ -1032,8 +1216,14 @@
                         const cloud = obj.children.find(c => c.userData.isCloud);
                         if(cloud) cloud.rotation.y += 0.004;
                     }
-                } else if (name === 'AsteroidBelt' || name === 'BlackHole') {
-                    obj.rotation.y += 0.0001;
+                } else if (name === 'AsteroidBelt') {
+                     obj.rotation.y += 0.0001;
+                } else if (name === 'BlackHole') {
+                    const disk = obj.children.find(c => c.userData.isDisk);
+                    if (disk) {
+                        disk.rotation.y += 0.002;
+                        disk.rotation.z -= 0.0005;
+                    }
                 } else if (name === 'Skills' && obj.visible) {
                     obj.rotation.y += 0.0005;
                     obj.rotation.x += 0.0002;
@@ -1048,7 +1238,9 @@
                 
                 if (obj.userData.dataStream && obj.userData.dataStream.visible) {
                     const stream = obj.userData.dataStream.children[0];
-                    stream.userData.time += delta * 0.5;
+                    const isActive = focusedObject === obj && detailsPanel.classList.contains('visible');
+                    const speedMultiplier = isActive ? 1.5 : 0.5;
+                    stream.userData.time += delta * speedMultiplier;
                     const positions = stream.geometry.attributes.position;
                     for (let i = 0; i < positions.count; i++) {
                         const angle = (i / positions.count) * Math.PI * 10 + stream.userData.time;
@@ -1057,16 +1249,22 @@
                     positions.needsUpdate = true;
                     obj.userData.dataStream.rotation.y += 0.002;
                 }
-                
-                // REMOVED: Aurora animation logic is gone
-            });
 
+                if (obj.userData.beacon) {
+                    const beacon = obj.userData.beacon;
+                    const pulse = (Math.sin(elapsedTime * 1.5) + 1) / 2;
+                    beacon.material.opacity = pulse * 0.3;
+                    const scale = 1 + pulse * 0.2;
+                    beacon.scale.set(scale, scale, scale);
+                }
+            });
+            
             comets.forEach(comet => {
                 comet.position.add(comet.userData.velocity.clone().multiplyScalar(delta * 60));
                 comet.lookAt(comet.position.clone().add(comet.userData.velocity));
                 if (comet.position.length() > 4000) resetComet(comet);
             });
-           
+
             if (focusedObject) {
                 focusedObject.getWorldPosition(cameraTarget);
                 const desiredPosition = new THREE.Vector3().copy(cameraTarget).add(cameraOffset);
@@ -1077,16 +1275,22 @@
             wormholePass.uniforms.time.value += delta;
             composer.render();
         }
-       
+        
         function init() {
             scene = new THREE.Scene();
             camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 20000);
             raycaster = new THREE.Raycaster();
             mouse = new THREE.Vector2();
-           
+            
             renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: true });
             renderer.setSize(window.innerWidth, window.innerHeight);
             renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap; 
+
+            renderer.toneMapping = THREE.ACESFilmicToneMapping;
+            renderer.toneMappingExposure = 1.0;
 
             const ambientLight = new THREE.AmbientLight(0xffffff, 0.2);
             scene.add(ambientLight);
@@ -1096,13 +1300,23 @@
             createSun();
             createPlanets();
             createSkillsConstellation();
-            createProjectsAsteroidField();
-            createAsteroidBelt();
+            createProjectNebula();
+            createCareerComet();
             createComets(20);
+            createAsteroidBelt();
             createBlackHole();
 
             composer = new THREE.EffectComposer(renderer);
             composer.addPass(new THREE.RenderPass(scene, camera));
+            
+            const bloomPass = new THREE.UnrealBloomPass(
+                new THREE.Vector2(window.innerWidth, window.innerHeight),
+                0.6, 
+                0.5, 
+                0.85 
+            );
+            composer.addPass(bloomPass);
+
             wormholePass = new THREE.ShaderPass(WormholeShader);
             wormholePass.uniforms.resolution.value.set(window.innerWidth, window.innerHeight);
             composer.addPass(wormholePass);
