@@ -1,1384 +1,285 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Hamza's Cosmic Resume</title>
-    <!-- Three.js and Post-processing scripts -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/EffectComposer.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/RenderPass.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/ShaderPass.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/CopyShader.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/tween.js/16.3.5/Tween.min.js"></script>
-    
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/LuminosityHighPassShader.js"></script>
-
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap');
-
-        /* --- Keyframes --- */
-        @keyframes text-glow {
-            0%, 100% { text-shadow: 0 0 5px #fff, 0 0 8px #fff, 0 0 12px #0077ff; }
-            50% { text-shadow: 0 0 8px #fff, 0 0 12px #fff, 0 0 18px #0077ff; }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hamza — Portfolio</title>
+    <meta name="description" content="Hamza's portfolio — AI, Embedded Systems, and Backend Engineering.">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>&#10022;</text></svg>">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+    <script src="https://unpkg.com/lenis@1.1.18/dist/lenis.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://unpkg.com/three@0.162.0/build/three.module.js",
+            "three/addons/": "https://unpkg.com/three@0.162.0/examples/jsm/"
         }
-
-        @keyframes fade-in {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        /* --- General Body and Scene --- */
-        body {
-            margin: 0;
-            background-color: #000005;
-            color: #e0e0e0;
-            font-family: 'Inter', sans-serif;
-            overflow: hidden;
-        }
-
-        #cosmic-scene {
-            position: fixed;
-            top: 0;
-            left: 0;
-            z-index: 1;
-            outline: none;
-            cursor: grab;
-        }
-
-        #cosmic-scene.grabbing {
-            cursor: grabbing;
-        }
-        
-        /* --- UI Elements --- */
-        header {
-            position: absolute;
-            top: 2rem;
-            left: 2rem;
-            z-index: 2;
-        }
-
-        header h1 {
-            font-size: clamp(2.5rem, 5vw, 3.5rem);
-            margin: 0;
-            font-weight: 700;
-            color: #fff;
-            animation: text-glow 4s ease-in-out infinite;
-        }
-
-        header h2 {
-            font-weight: 400;
-            color: #a0c4ff;
-            font-size: clamp(1rem, 2.5vw, 1.2rem);
-            margin: 0.25rem 0 0 0;
-        }
-
-        .navigation {
-            position: absolute;
-            left: 2rem;
-            top: 50%;
-            transform: translateY(-50%);
-            display: flex;
-            flex-direction: column;
-            align-items: flex-start;
-            gap: 1rem;
-            z-index: 2;
-        }
-
-        .nav-item {
-            background: rgba(10, 25, 47, 0.5);
-            backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
-            border: 1px solid rgba(56, 113, 193, 0.3);
-            border-radius: 8px;
-            padding: 0.75rem 1.25rem;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            color: #cde1ff;
-            font-weight: 500;
-        }
-
-        .nav-item:hover, .nav-item.active {
-            background: rgba(56, 113, 193, 0.5);
-            color: #fff;
-            transform: translateX(10px) scale(1.05);
-            border-color: rgba(139, 195, 255, 0.7);
-        }
-
-        .details-panel {
-            position: absolute;
-            top: 50%;
-            right: 2rem;
-            transform: translateY(-50%);
-            width: clamp(300px, 30vw, 450px);
-            max-height: 80vh;
-            overflow-y: auto;
-            background: rgba(10, 25, 47, 0.6);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            border: 1px solid rgba(56, 113, 193, 0.4);
-            border-radius: 12px;
-            padding: 1.5rem;
-            box-sizing: border-box;
-            z-index: 3;
-            opacity: 0;
-            visibility: hidden;
-            transition: opacity 0.5s ease, visibility 0.5s ease;
-        }
-
-        .details-panel.visible {
-            opacity: 1;
-            visibility: visible;
-        }
-
-        .details-panel h3 {
-            margin: 0 0 1rem 0;
-            font-size: 1.5rem;
-            color: #a0c4ff;
-            border-bottom: 1px solid rgba(56, 113, 193, 0.5);
-            padding-bottom: 0.75rem;
-        }
-
-        .details-content {
-            animation: fade-in 0.5s ease forwards;
-        }
-
-        .details-content h4 {
-            margin: 1rem 0 0.5rem 0;
-            font-weight: 700;
-            font-size: 1.1rem;
-            color: #e0e0e0;
-        }
-        .details-content h4:first-of-type {
-            margin-top: 0;
-        }
-
-        .details-content p, .details-content li {
-            margin: 0;
-            color: #b0c4de;
-            line-height: 1.6;
-        }
-
-        .details-content ul {
-            list-style-type: '– ';
-            padding-left: 1.25rem;
-            margin: 0.5rem 0 0 0;
-        }
-        
-        .details-content li {
-            margin-bottom: 0.5rem;
-        }
-
-        .close-button {
-            position: absolute;
-            top: 1rem;
-            right: 1rem;
-            background: none;
-            border: none;
-            color: #a0c4ff;
-            font-size: 1.5rem;
-            cursor: pointer;
-            transition: color 0.2s ease;
-        }
-        .close-button:hover {
-            color: #fff;
-        }
-
-        .instructions {
-            position: absolute;
-            bottom: 1rem;
-            width: 100%;
-            text-align: center;
-            color: #6a788d;
-            font-size: 0.8rem;
-            z-index: 2;
-        }
-
-        .timeline-nav, .skills-nav, .projects-nav { /* Combined styles */
-            display: flex;
-            gap: 0.5rem;
-            margin-top: 1rem;
-            flex-wrap: wrap;
-        }
-
-        .timeline-btn, .skills-btn, .project-btn { /* Combined styles */
-            flex-grow: 1;
-            background: rgba(56, 113, 193, 0.2);
-            border: 1px solid rgba(56, 113, 193, 0.5);
-            color: #a0c4ff;
-            padding: 0.5rem 0.75rem;
-            border-radius: 6px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            font-family: 'Inter', sans-serif;
-            font-size: 0.9rem;
-        }
-
-        .timeline-btn:hover, .skills-btn:hover, .project-btn:hover {
-            background: rgba(56, 113, 193, 0.4);
-            color: #fff;
-        }
-
-        .timeline-btn.active, .skills-btn.active, .project-btn.active {
-            background: rgba(56, 113, 193, 0.6);
-            color: #fff;
-            border-color: rgba(139, 195, 255, 0.9);
-        }
-
-        #experience-details-container, #skills-details-container, #project-details-container {
-            margin-top: 1rem;
-            padding-top: 1rem;
-            border-top: 1px solid rgba(56, 113, 193, 0.2);
-        }
-
-        /* --- Responsive Design --- */
-        @media (max-width: 768px) {
-            header {
-                left: 50%;
-                transform: translateX(-50%);
-                text-align: center;
-                width: 100%;
-                padding: 0 1rem;
-                box-sizing: border-box;
-            }
-            .navigation {
-                flex-direction: row;
-                flex-wrap: wrap;
-                justify-content: center;
-                gap: 0.5rem;
-                top: auto;
-                bottom: 5rem;
-                left: 50%;
-                transform: translateX(-50%);
-                width: 100%;
-            }
-            .nav-item {
-                padding: 0.5rem 1rem;
-            }
-            .nav-item:hover, .nav-item.active {
-                transform: scale(1.05);
-            }
-            .details-panel {
-                width: calc(100% - 2rem);
-                left: 1rem;
-                right: 1rem;
-                top: auto;
-                bottom: 12rem;
-                transform: none;
-                max-height: 40vh;
-            }
-        }
-
-    </style>
+    }
+    </script>
 </head>
 <body>
-    <canvas id="cosmic-scene"></canvas>
 
-    <header>
-        <h1>Hamza</h1>
-        <h2>AI / Embedded Systems / Backend Developer</h2>
-    </header>
+<!-- Custom Cursor -->
+<div id="cursor"></div>
+<div id="cursor-dot"></div>
 
-    <nav class="navigation">
-        <div class="nav-item" data-target="Overview">Overview</div>
-        <div class="nav-item" data-target="Skills">Skills</div>
-        <div class="nav-item" data-target="Experience">Experience</div>
-        <div class="nav-item" data-target="Projects">Projects</div>
-        <div class="nav-item" data-target="Education">Education</div>
-        <div class="nav-item" data-target="Contact">Contact</div>
-    </nav>
-
-    <div class="instructions" id="instructions-text">
-        Click a section or drag to explore
+<!-- Loading Screen -->
+<div id="loader">
+    <div class="loader-wrap">
+        <div class="loader-counter" id="loader-counter">0</div>
+        <div class="loader-bar"><div class="loader-progress" id="loader-progress"></div></div>
+        <div class="loader-text">loading</div>
     </div>
-    
-    <div class="details-panel" id="details-panel">
-        <button class="close-button" id="close-details">&times;</button>
-        <div id="details-content-container"></div>
+</div>
+
+<!-- Three.js Canvas -->
+<canvas id="bg"></canvas>
+
+<!-- Film Grain Overlay -->
+<div class="grain"></div>
+
+<!-- Scroll Progress Bar -->
+<div id="scroll-progress"></div>
+
+<!-- Main Content -->
+<div id="main">
+
+    <!-- Hero -->
+    <section class="hero" data-section="hero">
+        <h1 id="hero-title" class="hero-title"><span class="char">H</span><span class="char">A</span><span class="char">M</span><span class="char">Z</span><span class="char">A</span></h1>
+        <p id="hero-subtitle" class="hero-subtitle">AI / Embedded Systems / Backend Engineer</p>
+        <div class="scroll-cta">
+            <span>scroll</span>
+            <div class="scroll-line"></div>
+        </div>
+    </section>
+
+    <!-- Marquee / Ticker -->
+    <div class="marquee">
+        <div class="marquee-track">
+            <span>AI ENGINEERING</span>
+            <span class="marquee-dot">&bull;</span>
+            <span>EMBEDDED SYSTEMS</span>
+            <span class="marquee-dot">&bull;</span>
+            <span>BACKEND DEVELOPMENT</span>
+            <span class="marquee-dot">&bull;</span>
+            <span>MACHINE LEARNING</span>
+            <span class="marquee-dot">&bull;</span>
+            <span>PERFORMANCE OPTIMIZATION</span>
+            <span class="marquee-dot">&bull;</span>
+            <span>SYSTEM ARCHITECTURE</span>
+            <span class="marquee-dot">&bull;</span>
+            <span>AI ENGINEERING</span>
+            <span class="marquee-dot">&bull;</span>
+            <span>EMBEDDED SYSTEMS</span>
+            <span class="marquee-dot">&bull;</span>
+            <span>BACKEND DEVELOPMENT</span>
+            <span class="marquee-dot">&bull;</span>
+            <span>MACHINE LEARNING</span>
+            <span class="marquee-dot">&bull;</span>
+            <span>PERFORMANCE OPTIMIZATION</span>
+            <span class="marquee-dot">&bull;</span>
+            <span>SYSTEM ARCHITECTURE</span>
+            <span class="marquee-dot">&bull;</span>
+        </div>
     </div>
 
-    <script>
-        // --- SCENE SETUP ---
-        let scene, camera, renderer, composer, wormholePass, raycaster, mouse;
-        const celestialObjects = new Map();
-        const comets = [];
-        let careerComet, careerCometPath;
-        let isDragging = false, isWarping = false;
-        let previousMousePosition = { x: 0, y: 0 };
-        const canvas = document.getElementById('cosmic-scene');
-        let focusedObject = null;
-        let cameraTarget = new THREE.Vector3();
-        let starfield, nebulaeGroup;
-        const clock = new THREE.Clock();
-        let cameraOffset = new THREE.Vector3();
+    <!-- About -->
+    <section class="section" data-section="about" id="about">
+        <div class="section-inner">
+            <div class="section-watermark">01</div>
+            <div class="section-label">01</div>
+            <h2 class="section-title reveal-text">About</h2>
+            <div class="section-content">
+                <p class="reveal-text">Software engineer specializing in AI systems, embedded firmware, and scalable backend services. Passionate about building software that bridges the gap between intelligent algorithms and real-world hardware.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Skills -->
+    <section class="section" data-section="skills" id="skills">
+        <div class="section-inner">
+            <div class="section-watermark">02</div>
+            <div class="section-label">02</div>
+            <h2 class="section-title reveal-text">Skills</h2>
+            <div class="section-content">
+                <div class="skill-group reveal-up">
+                    <h3>Languages &amp; Frameworks</h3>
+                    <div class="tags">
+                        <span class="tag">Python</span>
+                        <span class="tag">C / C++</span>
+                        <span class="tag">PyTorch</span>
+                        <span class="tag">TensorFlow</span>
+                        <span class="tag">FastAPI</span>
+                        <span class="tag">Flask</span>
+                    </div>
+                </div>
+                <div class="skill-group reveal-up">
+                    <h3>Areas of Expertise</h3>
+                    <div class="tags">
+                        <span class="tag">Embedded Systems</span>
+                        <span class="tag">AI / ML</span>
+                        <span class="tag">Backend Development</span>
+                        <span class="tag">Performance Optimization</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Experience -->
+    <section class="section" data-section="experience" id="experience">
+        <div class="section-inner">
+            <div class="section-watermark">03</div>
+            <div class="section-label">03</div>
+            <h2 class="section-title reveal-text">Experience</h2>
+            <div class="timeline">
+                <div class="timeline-line"></div>
+                <div class="timeline-item reveal-up">
+                    <div class="timeline-dot"></div>
+                    <div class="timeline-date">2023 -- Present</div>
+                    <div class="timeline-card">
+                        <h3>Backend Engineer</h3>
+                        <p class="timeline-company">AI Startup</p>
+                        <ul>
+                            <li>Architected and optimized LLM inference pipelines, achieving a 30% reduction in latency.</li>
+                            <li>Developed scalable RESTful APIs for new product features, serving thousands of daily active users.</li>
+                            <li>Implemented a multi-layered caching strategy that improved throughput by 50% and reduced database load.</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="timeline-item reveal-up">
+                    <div class="timeline-dot"></div>
+                    <div class="timeline-date">2021 -- 2023</div>
+                    <div class="timeline-card">
+                        <h3>Embedded Systems Developer</h3>
+                        <p class="timeline-company">Hardware Co.</p>
+                        <ul>
+                            <li>Designed and implemented firmware in C++ for ARM-based IoT devices using FreeRTOS.</li>
+                            <li>Integrated sensors and wireless modules (Wi-Fi, BLE) for connected device ecosystems.</li>
+                            <li>Drove full product lifecycle from hardware bring-up and debugging to production deployment.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Projects (Horizontal Scroll) -->
+    <section class="section projects-horizontal" data-section="projects" id="projects">
+        <div class="section-inner">
+            <div class="section-watermark">04</div>
+            <div class="section-label">04</div>
+            <h2 class="section-title reveal-text">Projects</h2>
+            <div class="project-track">
+                <div class="project-card" data-tilt>
+                    <div class="project-number">01</div>
+                    <h3>Neural Network for Image Recognition</h3>
+                    <p>Developed a CNN from scratch in Python to classify images with 95% accuracy on the CIFAR-10 dataset. Implemented custom backpropagation and optimization routines.</p>
+                    <div class="project-tags">
+                        <span>Python</span>
+                        <span>PyTorch</span>
+                        <span>CNN</span>
+                    </div>
+                </div>
+                <div class="project-card" data-tilt>
+                    <div class="project-number">02</div>
+                    <h3>Smart Home Automation System</h3>
+                    <p>Built a custom home automation hub using a Raspberry Pi, C++, and various sensors -- controlled via a real-time web interface with WebSocket communication.</p>
+                    <div class="project-tags">
+                        <span>C++</span>
+                        <span>Raspberry Pi</span>
+                        <span>WebSocket</span>
+                    </div>
+                </div>
+                <div class="project-card" data-tilt>
+                    <div class="project-number">03</div>
+                    <h3>Real-time Data Pipeline</h3>
+                    <p>Data ingestion pipeline processing 50K events/sec using Kafka, with anomaly detection.</p>
+                    <div class="project-tags">
+                        <span>Python</span>
+                        <span>Kafka</span>
+                        <span>PostgreSQL</span>
+                    </div>
+                </div>
+                <div class="project-card" data-tilt>
+                    <div class="project-number">04</div>
+                    <h3>Autonomous Drone Controller</h3>
+                    <p>Flight control firmware for custom quadcopter with PID stabilization and GPS waypoint navigation.</p>
+                    <div class="project-tags">
+                        <span>C</span>
+                        <span>STM32</span>
+                        <span>PID Control</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Education -->
+    <section class="section" data-section="education" id="education">
+        <div class="section-inner">
+            <div class="section-watermark">05</div>
+            <div class="section-label">05</div>
+            <h2 class="section-title reveal-text">Education</h2>
+            <div class="section-content">
+                <div class="edu-card reveal-up">
+                    <h3>BSc in Computer Engineering</h3>
+                    <p>Graduated with honors, focusing on embedded systems, computer architecture, and machine learning fundamentals.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Contact -->
+    <section class="section contact" data-section="contact" id="contact">
+        <div class="section-inner">
+            <div class="section-watermark">06</div>
+            <div class="section-label">06</div>
+            <h2 class="section-title reveal-text">Get in Touch</h2>
+            <div class="contact-links reveal-up">
+                <a class="contact-link" href="mailto:hamza@example.com">
+                    <span class="contact-label">Email</span>
+                    <span class="contact-value">hamza@example.com</span>
+                </a>
+                <a class="contact-link" href="https://linkedin.com/in/hamza" target="_blank" rel="noopener noreferrer">
+                    <span class="contact-label">LinkedIn</span>
+                    <span class="contact-value">linkedin.com/in/hamza</span>
+                </a>
+                <a class="contact-link" href="https://github.com/hamza" target="_blank" rel="noopener noreferrer">
+                    <span class="contact-label">GitHub</span>
+                    <span class="contact-value">github.com/hamza</span>
+                </a>
+            </div>
+            <p class="footer-note">&copy; 2025 Hamza. Built with passion.</p>
+        </div>
+    </section>
+
+</div>
+
+<!-- Side Navigation -->
+<nav class="side-nav" id="side-nav">
+    <a href="#" class="side-nav-dot active" data-section="hero" data-label="Home"></a>
+    <a href="#about" class="side-nav-dot" data-section="about" data-label="About"></a>
+    <a href="#skills" class="side-nav-dot" data-section="skills" data-label="Skills"></a>
+    <a href="#experience" class="side-nav-dot" data-section="experience" data-label="Experience"></a>
+    <a href="#projects" class="side-nav-dot" data-section="projects" data-label="Projects"></a>
+    <a href="#education" class="side-nav-dot" data-section="education" data-label="Education"></a>
+    <a href="#contact" class="side-nav-dot" data-section="contact" data-label="Contact"></a>
+</nav>
+
+<!-- Audio Toggle -->
+<button class="audio-toggle" id="audio-toggle" title="Toggle ambient audio">
+    <div class="audio-bars"><span></span><span></span><span></span><span></span></div>
+</button>
+
+<!-- Main Script -->
+<script type="module" src="js/app.js"></script>
 
-        // --- UI ELEMENTS ---
-        const detailsPanel = document.getElementById('details-panel');
-        const detailsContentContainer = document.getElementById('details-content-container');
-        const navItems = document.querySelectorAll('.nav-item');
-        const closeButton = document.getElementById('close-details');
-        const instructionsText = document.getElementById('instructions-text');
-
-        // --- RESUME DATA ---
-        const resumeData = { 
-            "Overview": `<h3>Overview</h3><div class="details-content"><p>Software engineer looking for a backend engineering job.</p></div>`, 
-            "Skills": {
-                "main": `<h3>Skills</h3>
-                         <div class="details-content">
-                             <p>My core competencies represented as a constellation. Click a star or select a category below.</p>
-                             <div class="skills-nav">
-                                 <button class="skills-btn" data-skill-key="Languages & Frameworks">Languages & Frameworks</button>
-                                 <button class="skills-btn" data-skill-key="Areas of Expertise">Areas of Expertise</button>
-                             </div>
-                             <div id="skills-details-container"></div>
-                         </div>`,
-                "Languages & Frameworks": {
-                    "title": "Languages & Frameworks",
-                    "list": ["Python", "C/C++", "PyTorch", "TensorFlow", "FastAPI", "Flask"]
-                },
-                "Areas of Expertise": {
-                    "title": "Areas of Expertise",
-                    "list": ["Embedded Systems", "AI/ML", "Backend Dev", "Optimization"]
-                }
-            },
-            "Experience": {
-                "main": `<h3>Experience</h3>
-                         <div class="details-content">
-                             <p>A timeline of my professional journey. Click a node on the holographic ring or select a role below.</p>
-                             <div class="timeline-nav">
-                                 <button class="timeline-btn" data-job-key="Backend Engineer">Backend Engineer</button>
-                                 <button class="timeline-btn" data-job-key="Embedded Systems Developer">Embedded Systems Developer</button>
-                             </div>
-                             <div id="experience-details-container"></div>
-                         </div>`,
-                "Backend Engineer": `<h4>Backend Engineer - AI Startup</h4><p><strong>2023 - Present</strong></p><ul><li>Architected and optimized LLM inference pipelines, achieving a 30% reduction in latency.</li><li>Developed and maintained scalable RESTful APIs for new product features, serving thousands of daily active users.</li><li>Implemented a multi-layered caching strategy that improved system throughput by 50% and reduced database load.</li></ul>`,
-                "Embedded Systems Developer": `<h4>Embedded Systems Developer - Hardware Co.</h4><p><strong>2021 - 2023</strong></p><ul><li>Designed and implemented firmware in C++ for ARM-based IoT devices using FreeRTOS.</li><li>Integrated various sensors and wireless communication modules (Wi-Fi, Bluetooth Low Energy).</li><li>Played a key role in the full product lifecycle, from hardware design and debugging to final deployment.</li></ul>`
-            },
-            "Projects": {
-                "main": `<h3>Projects</h3>
-                         <div class="details-content">
-                             <p>A creative nebula where my projects are born. Scan a protostar or select a project below.</p>
-                             <div class="projects-nav">
-                                 <button class="project-btn" data-project-key="Neural Network for Image Recognition">Neural Network</button>
-                                 <button class="project-btn" data-project-key="Smart Home Automation System">Smart Home</button>
-                             </div>
-                             <div id="project-details-container"></div>
-                         </div>`,
-                "Neural Network for Image Recognition": `<h4>Neural Network for Image Recognition</h4><p>Developed a CNN from scratch in Python to classify images with 95% accuracy on the CIFAR-10 dataset.</p>`,
-                "Smart Home Automation System": `<h4>Smart Home Automation System</h4><p>Built a custom home automation hub using a Raspberry Pi, C++, and various sensors, controlled via a web interface.</p>`
-            }, 
-            "Education": `<h3>Education</h3><div class="details-content"><h4>BSc in Computer Engineering</h4><p>Graduated with honors, focusing on embedded systems and computer architecture.</p></div>`, 
-            "Contact": `<h3>Contact</h3><div class="details-content"><p><strong>Email:</strong> hamza@example.com</p><p><strong>LinkedIn:</strong> linkedin.com/in/hamza</p></div>`
-        };
-
-        // --- FACTORY FOR TEXTURES & SHADERS ---
-        const Factory = {
-            createTexture: function(c1, c2, t = 'planet') { 
-                const cv = document.createElement('canvas'); 
-                cv.width=512; cv.height=256; 
-                const ctx = cv.getContext('2d'); 
-                ctx.fillStyle=c1; 
-                ctx.fillRect(0,0,512,256); 
-                const i=t==='bump'?2000:30; 
-                for(let n=0;n<i;n++){ 
-                    const x=Math.random()*512, y=Math.random()*256, r=t==='bump'?Math.random()*3:Math.random()*50+10; 
-                    ctx.fillStyle=`rgba(${c2.r},${c2.g},${c2.b},${Math.random()*0.5+0.5})`; 
-                    ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2); ctx.fill(); 
-                } 
-                if (t === 'experience') {
-                    ctx.strokeStyle = 'rgba(200, 225, 255, 0.3)';
-                    ctx.lineWidth = 1;
-                    ctx.shadowColor = 'rgba(220, 235, 255, 0.8)';
-                    ctx.shadowBlur = 10;
-                    for (let j = 0; j < 5; j++) {
-                        ctx.beginPath();
-                        ctx.moveTo(Math.random() * 512, Math.random() * 256);
-                        ctx.bezierCurveTo(
-                            Math.random() * 512, Math.random() * 256,
-                            Math.random() * 512, Math.random() * 256,
-                            Math.random() * 512, Math.random() * 256
-                        );
-                        ctx.stroke();
-                    }
-                }
-                return new THREE.CanvasTexture(cv); 
-            },
-            createRingTexture: function() { const cv=document.createElement('canvas');cv.width=1;cv.height=256;const ctx=cv.getContext('2d');const g=ctx.createLinearGradient(0,0,0,256);g.addColorStop(0.0,'rgba(150,130,110,0.8)');g.addColorStop(0.1,'rgba(150,130,110,0.6)');g.addColorStop(0.6,'rgba(150,130,110,0.2)');g.addColorStop(1.0,'rgba(150,130,110,0.0)');ctx.fillStyle=g;ctx.fillRect(0,0,1,256);return new THREE.CanvasTexture(cv);},
-            createAtmosphereMaterial: function() { return new THREE.ShaderMaterial({uniforms:{c:{value:0.7},p:{value:4.0}},vertexShader:`varying vec3 vNormal;void main(){vNormal=normalize(normalMatrix*normal);gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}`,fragmentShader:`varying vec3 vNormal;void main(){float i=pow(0.7-dot(vNormal,vec3(0.0,0.0,1.0)),4.0);gl_FragColor=vec4(0.5,0.65,1.0,1.0)*i;}`,side:THREE.BackSide,blending:THREE.AdditiveBlending,transparent:true}); },
-            createNebulaTexture: function(c1,c2) { const cv=document.createElement('canvas');cv.width=512;cv.height=512;const ctx=cv.getContext('2d');const g=ctx.createRadialGradient(256,256,0,256,256,256);g.addColorStop(0,`rgba(${c1.r},${c1.g},${c1.b},0.4)`);g.addColorStop(0.2,`rgba(${c2.r},${c2.g},${c2.b},0.2)`);g.addColorStop(1,'rgba(0,0,0,0)');ctx.fillStyle=g;ctx.fillRect(0,0,512,512);for(let i=0;i<50;i++){ctx.fillStyle=`rgba(255,255,255,${Math.random()*0.05})`;ctx.beginPath();ctx.arc(Math.random()*512,Math.random()*512,Math.random()*3,0,Math.PI*2);ctx.fill();}return new THREE.CanvasTexture(cv);},
-            createStarTexture: function() {
-                const canvas = document.createElement('canvas');
-                canvas.width = 64; canvas.height = 64;
-                const ctx = canvas.getContext('2d');
-                const gradient = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
-                gradient.addColorStop(0, 'rgba(255,255,255,1)');
-                gradient.addColorStop(0.2, 'rgba(200,200,255,1)');
-                gradient.addColorStop(0.4, 'rgba(150,150,255,0.6)');
-                gradient.addColorStop(1, 'rgba(100,100,255,0)');
-                ctx.fillStyle = gradient;
-                ctx.fillRect(0, 0, 64, 64);
-                return new THREE.CanvasTexture(canvas);
-            },
-            createCoronaTexture: function() {
-                const canvas = document.createElement('canvas');
-                canvas.width = 256; canvas.height = 256;
-                const ctx = canvas.getContext('2d');
-                const gradient = ctx.createRadialGradient(128, 128, 0, 128, 128, 128);
-                gradient.addColorStop(0, 'rgba(255, 220, 150, 0.8)');
-                gradient.addColorStop(0.6, 'rgba(255, 200, 100, 0.2)');
-                gradient.addColorStop(1, 'rgba(255, 165, 0, 0)');
-                ctx.fillStyle = gradient;
-                ctx.fillRect(0, 0, 256, 256);
-                return new THREE.CanvasTexture(canvas);
-            }
-        };
-
-        // --- SHADERS ---
-        const WormholeShader = {
-            uniforms: { "tDiffuse": { value: null }, "time": { value: 0.0 }, "progress": { value: 0.0 }, "resolution": { value: new THREE.Vector2() } },
-            vertexShader: `varying vec2 vUv; void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
-            fragmentShader: `
-                uniform sampler2D tDiffuse;
-                uniform float time;
-                uniform float progress;
-                varying vec2 vUv;
-                void main() {
-                    vec2 p = (vUv - 0.5) * 2.0;
-                    float r = length(p);
-                    float a = atan(p.y, p.x);
-                    float twist = progress * 3.0 * (1.0 - r);
-                    float pinch = r * r * progress * 2.5;
-                    vec2 offset = vec2(cos(a + twist), sin(a + twist)) * pinch;
-                    vec4 color = texture2D(tDiffuse, vUv + offset);
-                    float vignette = 1.0 - smoothstep(0.7, 1.0, r) * progress;
-                    gl_FragColor = color * vignette;
-                }`
-        };
-
-        const SunShader = {
-            uniforms: { time: { value: 0.0 } },
-            vertexShader: `
-                varying vec2 vUv;
-                void main() {
-                    vUv = uv;
-                    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-                }
-            `,
-            fragmentShader: `
-                uniform float time;
-                varying vec2 vUv;
-
-                float random(vec2 st) { return fract(sin(dot(st.xy, vec2(12.9898, 78.233))) * 43758.5453123); }
-                float noise(vec2 st) {
-                    vec2 i = floor(st); vec2 f = fract(st);
-                    float a = random(i); float b = random(i + vec2(1.0, 0.0)); float c = random(i + vec2(0.0, 1.0)); float d = random(i + vec2(1.0, 1.0));
-                    vec2 u = f * f * (3.0 - 2.0 * f);
-                    return mix(a, b, u.x) + (c - a) * u.y * (1.0 - u.x) + (d - b) * u.y * u.x;
-                }
-                float fbm(vec2 st) {
-                    float value = 0.0; float amplitude = 0.5;
-                    for (int i = 0; i < 5; i++) {
-                        value += amplitude * noise(st);
-                        st *= 2.0; amplitude *= 0.5;
-                    }
-                    return value;
-                }
-
-                void main() {
-                    vec2 uv = vUv; float t = time * 0.1;
-                    vec2 motion = vec2(fbm(uv + t), fbm(uv - t));
-                    float n = fbm(uv * 4.0 + motion);
-                    vec3 color1 = vec3(1.0, 0.8, 0.2); vec3 color2 = vec3(1.0, 0.5, 0.0); vec3 color3 = vec3(0.8, 0.2, 0.0);
-                    vec3 color = mix(color3, color2, smoothstep(0.3, 0.6, n));
-                    color = mix(color, color1, smoothstep(0.6, 0.8, n));
-                    gl_FragColor = vec4(color, 1.0);
-                }
-            `
-        };
-
-        const AuroraShader = {
-            uniforms: { time: { value: 0.0 } },
-            vertexShader: `
-                varying vec3 vNormal;
-                varying vec3 vPosition;
-                void main() {
-                    vNormal = normalize(normalMatrix * normal);
-                    vPosition = position;
-                    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-                }
-            `,
-            fragmentShader: `
-                uniform float time;
-                varying vec3 vNormal;
-                varying vec3 vPosition;
-                
-                float noise(vec3 p) {
-                    return fract(sin(dot(p, vec3(12.9898, 78.233, 151.7182))) * 43758.5453);
-                }
-
-                float fbm(vec3 p) {
-                    float f = 0.0;
-                    f += 0.5000 * noise(p); p *= 2.02;
-                    f += 0.2500 * noise(p); p *= 2.03;
-                    f += 0.1250 * noise(p);
-                    return f;
-                }
-
-                void main() {
-                    float pole_mask = pow(abs(vNormal.y), 4.0);
-                    float time_offset = time * 0.5;
-                    float noise_val = fbm(vec3(vPosition.xz * 0.2, time_offset));
-                    
-                    float bands = sin(vPosition.y * 2.0 + noise_val * 10.0);
-                    float final_color = pow(bands, 3.0);
-                    
-                    gl_FragColor = vec4(0.3, 1.0, 0.7, final_color * pole_mask);
-                }
-            `
-        };
-
-        // --- CREATION FUNCTIONS ---
-        function createGalaxy() {
-            const v=[]; for(let i=0;i<15000;i++){v.push(THREE.MathUtils.randFloatSpread(10000),THREE.MathUtils.randFloatSpread(10000),THREE.MathUtils.randFloatSpread(10000));} const g=new THREE.BufferGeometry(); g.setAttribute('position',new THREE.Float32BufferAttribute(v,3)); const m=new THREE.PointsMaterial({color:0xbbccff,size:1.5,transparent:true,opacity:0.8}); starfield=new THREE.Points(g,m); scene.add(starfield);
-        }
-
-        function createNebulae() {
-            nebulaeGroup=new THREE.Group(); const nD=[{c1:{r:160,g:100,b:200},c2:{r:80,g:50,b:150},p:new THREE.Vector3(-1500,200,-2500),s:2000},{c1:{r:80,g:150,b:220},c2:{r:40,g:80,b:180},p:new THREE.Vector3(2000,-100,-2000),s:1800},{c1:{r:220,g:100,b:100},c2:{r:180,g:50,b:50},p:new THREE.Vector3(800,500,-3000),s:2500}]; nD.forEach(d=>{const m=new THREE.SpriteMaterial({map:Factory.createNebulaTexture(d.c1,d.c2),blending:THREE.AdditiveBlending,transparent:true,opacity:0.5});const s=new THREE.Sprite(m);s.position.copy(d.p);s.scale.set(d.s,d.s,1.0);nebulaeGroup.add(s);}); scene.add(nebulaeGroup);
-        }
-
-        function createSun() {
-            const sunGroup = new THREE.Group();
-            const sL=new THREE.PointLight(0xffddaa, 1.2, 6000); 
-            
-            sL.castShadow = true;
-            sL.shadow.mapSize.width = 2048; 
-            sL.shadow.mapSize.height = 2048;
-            sL.shadow.camera.near = 10;
-            sL.shadow.camera.far = 5000;
-
-            const sG=new THREE.SphereGeometry(25,64,64); 
-            const sM=new THREE.ShaderMaterial(SunShader);
-            const s=new THREE.Mesh(sG,sM); 
-            s.add(sL); 
-            sunGroup.add(s);
-            sunGroup.userData.shader = sM;
-
-            const coronaMaterial = new THREE.SpriteMaterial({ map: Factory.createCoronaTexture(), blending: THREE.AdditiveBlending, transparent: true, opacity: 0.8 });
-            const corona = new THREE.Sprite(coronaMaterial);
-            corona.scale.set(100, 100, 1);
-            sunGroup.add(corona);
-            sunGroup.userData.corona = corona;
-
-            scene.add(sunGroup); 
-            celestialObjects.set('Sun',sunGroup); 
-            celestialObjects.set('Overview',sunGroup); 
-            createLensflare(sL);
-        }
-
-        function createLensflare(l) {
-            const tL=new THREE.TextureLoader(); const fC=`data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAABHNCSVQICAgIfAhkiAAAAAlwSFlzAAALEgAACxIB0t1+/AAAABZ0RVh0Q3JlYXRpb24gVGltZQAxMi8xMi8xMlhq0bEAAAAcdEVYdFNvZnR3YXJlAEFkb2JlIEZpcmV3b3JrcyBDUzbovLKMAAAAVklEQVRYhe3PsQ0AIAwDwVT9/20dI6QxG4RBEAg+z4h13QxV224A8P+PcwB4vA/gCRAAgYAgEACBgCAQAIGAIBAAgYAgEACBgCAQAAEAAY8bYQBx2w8AAAAASUVORK5CYII=`; const tF0=tL.load(fC); const lf=new THREE.Group(); const f=new THREE.Sprite(new THREE.SpriteMaterial({map:tF0,blending:THREE.AdditiveBlending,color:0xffd0a0,transparent:true,opacity:0.5})); f.scale.set(150,150,1); lf.add(f); l.add(lf);
-        }
-        
-        function createSkillsConstellation() {
-            const constellationGroup = new THREE.Group();
-            const interactiveNodes = [];
-            const starMaterial = new THREE.SpriteMaterial({ map: Factory.createStarTexture(), blending: THREE.AdditiveBlending, transparent: true, opacity: 0.9, color: 0xaaccff });
-
-            const star1 = new THREE.Sprite(starMaterial.clone());
-            star1.position.set(-20, 10, 0);
-            star1.scale.set(12, 12, 1);
-            star1.userData.skillKey = "Languages & Frameworks";
-            star1.name = "skillNode";
-            constellationGroup.add(star1);
-            interactiveNodes.push(star1);
-
-            const star2 = new THREE.Sprite(starMaterial.clone());
-            star2.position.set(20, -10, 0);
-            star2.scale.set(12, 12, 1);
-            star2.userData.skillKey = "Areas of Expertise";
-            star2.name = "skillNode";
-            constellationGroup.add(star2);
-            interactiveNodes.push(star2);
-
-            const lineMaterial = new THREE.LineBasicMaterial({ color: 0xaaaaff, transparent: true, opacity: 0.2, blending: THREE.AdditiveBlending });
-            const points = [star1.position, star2.position];
-            const lineGeometry = new THREE.BufferGeometry().setFromPoints(points);
-            const line = new THREE.Line(lineGeometry, lineMaterial);
-            constellationGroup.add(line);
-
-            constellationGroup.userData.interactiveNodes = interactiveNodes;
-            constellationGroup.userData.subStars = []; // To hold the smaller skill stars
-            constellationGroup.position.set(80, 0, 0);
-            constellationGroup.visible = false;
-            celestialObjects.set('Skills', constellationGroup);
-            scene.add(constellationGroup);
-        }
-
-        function createExperienceTimeline(planetGroup) {
-            const hologramGroup = new THREE.Group();
-            hologramGroup.name = "Hologram";
-            const interactiveNodes = [];
-
-            const planetRadius = planetGroup.children[0].geometry.parameters.radius;
-            const ringRadius = planetRadius + 4;
-            const ringGeometry = new THREE.TorusGeometry(ringRadius, 0.2, 16, 100);
-            const ringMaterial = new THREE.MeshBasicMaterial({ color: 0x00ffff, transparent: true, opacity: 0.6, blending: THREE.AdditiveBlending });
-            const ring = new THREE.Mesh(ringGeometry, ringMaterial);
-            ring.rotation.x = Math.PI / 2;
-            hologramGroup.add(ring);
-
-            const nodeGeometry = new THREE.SphereGeometry(0.8, 16, 16);
-            const nodeMaterial1 = new THREE.MeshBasicMaterial({ color: 0x00ffff, blending: THREE.AdditiveBlending });
-            const nodeMaterial2 = new THREE.MeshBasicMaterial({ color: 0x99ffff, blending: THREE.AdditiveBlending });
-
-            const node1 = new THREE.Mesh(nodeGeometry, nodeMaterial1);
-            node1.position.set(ringRadius, 0, 0);
-            node1.userData.jobKey = "Backend Engineer";
-            node1.name = "experienceNode";
-            hologramGroup.add(node1);
-            interactiveNodes.push(node1);
-
-            const node2 = new THREE.Mesh(nodeGeometry, nodeMaterial2);
-            node2.position.set(-ringRadius, 0, 0);
-            node2.userData.jobKey = "Embedded Systems Developer";
-            node2.name = "experienceNode";
-            hologramGroup.add(node2);
-            interactiveNodes.push(node2);
-
-            hologramGroup.visible = false;
-            planetGroup.add(hologramGroup);
-            planetGroup.userData.hologram = hologramGroup;
-            planetGroup.userData.interactiveNodes = interactiveNodes;
-        }
-        
-        function createProjectNebula() {
-            const nebulaGroup = new THREE.Group();
-            nebulaGroup.name = "projectsField";
-            const interactiveNodes = [];
-
-            // Create background gas clouds
-            const cloudColors = [
-                { c1: { r: 100, g: 80, b: 200 }, c2: { r: 50, g: 40, b: 150 } },
-                { c1: { r: 200, g: 80, b: 120 }, c2: { r: 150, g: 40, b: 80 } },
-            ];
-            for (let i = 0; i < 10; i++) {
-                const color = cloudColors[i % cloudColors.length];
-                const spriteMat = new THREE.SpriteMaterial({
-                    map: Factory.createNebulaTexture(color.c1, color.c2),
-                    blending: THREE.AdditiveBlending,
-                    transparent: true,
-                    opacity: 0.3 + Math.random() * 0.2
-                });
-                const sprite = new THREE.Sprite(spriteMat);
-                sprite.position.set(
-                    (Math.random() - 0.5) * 50,
-                    (Math.random() - 0.5) * 30,
-                    (Math.random() - 0.5) * 20 - 10
-                );
-                const scale = Math.random() * 40 + 20;
-                sprite.scale.set(scale, scale, 1);
-                nebulaGroup.add(sprite);
-            }
-
-            // Create non-interactive asteroids within the nebula
-            const fieldRadius = 30;
-            for (let i = 0; i < 30; i++) {
-                const size = Math.random() * 1.5 + 0.5;
-                const geometry = new THREE.IcosahedronGeometry(size, 0);
-                const material = new THREE.MeshStandardMaterial({ color: 0x888888, flatShading: true, roughness: 0.9 });
-                const asteroid = new THREE.Mesh(geometry, material);
-                const pos = new THREE.Vector3( (Math.random() - 0.5) * fieldRadius, (Math.random() - 0.5) * fieldRadius, (Math.random() - 0.5) * fieldRadius );
-                asteroid.position.copy(pos);
-                asteroid.rotation.set(Math.random() * Math.PI, Math.random() * Math.PI, Math.random() * Math.PI);
-                nebulaGroup.add(asteroid);
-            }
-
-            // Create interactive protostars for projects
-            const protoStarMat1 = new THREE.SpriteMaterial({ map: Factory.createStarTexture(), color: 0xffaa00, blending: THREE.AdditiveBlending });
-            const project1 = new THREE.Sprite(protoStarMat1);
-            project1.scale.set(15, 15, 1);
-            project1.position.set(-15, 5, 0);
-            project1.userData.projectKey = "Neural Network for Image Recognition";
-            project1.name = "projectNode";
-            nebulaGroup.add(project1);
-            interactiveNodes.push(project1);
-            
-            const protoStarMat2 = new THREE.SpriteMaterial({ map: Factory.createStarTexture(), color: 0x00aaff, blending: THREE.AdditiveBlending });
-            const project2 = new THREE.Sprite(protoStarMat2);
-            project2.scale.set(15, 15, 1);
-            project2.position.set(15, -5, 0);
-            project2.userData.projectKey = "Smart Home Automation System";
-            project2.name = "projectNode";
-            nebulaGroup.add(project2);
-            interactiveNodes.push(project2);
-
-            nebulaGroup.userData.interactiveNodes = interactiveNodes;
-            // Set up orbiting properties
-            nebulaGroup.userData.orbit = 180;
-            nebulaGroup.userData.speed = 0.001;
-            nebulaGroup.userData.angle = Math.random() * Math.PI * 2;
-            nebulaGroup.userData.internalRotation = new THREE.Vector3(0.0002, 0.0005, 0.0001);
-
-            nebulaGroup.visible = false;
-            celestialObjects.set('Projects', nebulaGroup);
-            scene.add(nebulaGroup);
-        }
-
-        function createEducationDataStream(planetGroup) {
-            const streamGroup = new THREE.Group();
-            streamGroup.name = "dataStream";
-            const particleCount = 2000;
-            const particles = new THREE.BufferGeometry();
-            const positions = [];
-            const planetRadius = planetGroup.children[0].geometry.parameters.radius;
-
-            for (let i = 0; i < particleCount; i++) {
-                const angle = (i / particleCount) * Math.PI * 10;
-                const radius = planetRadius + 3 + Math.sin(angle * 0.5) * 2;
-                const x = Math.cos(angle) * radius;
-                const y = (Math.random() - 0.5) * 15;
-                const z = Math.sin(angle) * radius;
-                positions.push(x, y, z);
-            }
-
-            particles.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
-            const particleMaterial = new THREE.PointsMaterial({
-                color: 0xffffaa,
-                size: 0.2,
-                blending: THREE.AdditiveBlending,
-                transparent: true,
-                opacity: 0.7
-            });
-            const dataStream = new THREE.Points(particles, particleMaterial);
-            dataStream.userData.time = 0;
-            streamGroup.add(dataStream);
-            
-            streamGroup.visible = false;
-            planetGroup.add(streamGroup);
-            planetGroup.userData.dataStream = streamGroup;
-        }
-
-        function createPlanets() {
-            const pD=[
-                {n:'Experience',r:7,o:130,s:0.002,c1:'#2e5a88',c2:{r:180,g:220,b:255},hC:true, specialTexture: 'experience', specialEffect: 'aurora'},
-                {n:'Education',r:12,o:280,s:0.0005,c1:'#d8ca9d',c2:{r:200,g:180,b:140}},
-                {n:'Contact',r:9,o:380,s:0.0003,c1:'#c7a584',c2:{r:150,g:130,b:110},hR:true, specialEffect: 'beacon'},
-            ];
-            const decorativePlanets = [
-                {n:'Deco1', r:3, o:55, s:0.005, c1:'#a0522d', c2:{r:188,g:143,b:143}},
-                {n:'Deco2', r:2, o:105, s:0.003, c1:'#4682b4', c2:{r:70,g:130,b:180}},
-                {n:'Deco3', r:6, o:210, s:0.0008, c1:'#556b2f', c2:{r:85,g:107,b:47}, hR:true},
-                {n:'Deco4', r:4, o:330, s:0.0004, c1:'#b0c4de', c2:{r:176,g:196,b:222}}
-            ];
-            const allPlanets = [...pD, ...decorativePlanets];
-
-            allPlanets.forEach(d=>{
-                const pG=new THREE.Group();
-                const textureType = d.specialTexture || 'planet';
-                const pGeo=new THREE.SphereGeometry(d.r,32,32);
-                const pMat=new THREE.MeshStandardMaterial({map:Factory.createTexture(d.c1,d.c2, textureType),bumpMap:Factory.createTexture('#808080',{r:0,g:0,b:0},'bump'),bumpScale:0.05,roughness:0.8});
-                const p=new THREE.Mesh(pGeo,pMat);
-                p.rotation.y=Math.random()*Math.PI*2;
-
-                p.castShadow = true;
-                p.receiveShadow = true;
-
-                pG.add(p);
-                const a=new THREE.Mesh(new THREE.SphereGeometry(d.r*1.05,32,32),Factory.createAtmosphereMaterial());
-                pG.add(a);
-                if(d.hC){const cG=new THREE.SphereGeometry(d.r+0.2,32,32);const cM=new THREE.MeshStandardMaterial({alphaMap:Factory.createTexture('black',{r:255,g:255,b:255}),transparent:true,opacity:0.6});const c=new THREE.Mesh(cG,cM);c.userData.isCloud=true;pG.add(c);}
-                if(d.hR){const rG=new THREE.RingGeometry(d.r+2,d.r+7,64);const rM=new THREE.MeshBasicMaterial({map:Factory.createRingTexture(),side:THREE.DoubleSide,transparent:true,opacity:0.8});const r=new THREE.Mesh(rG,rM);r.rotation.x=Math.PI*0.55;
-                
-                r.receiveShadow = true;
-
-                pG.add(r);}
-                pG.userData.orbit=d.o;pG.userData.speed=d.s;pG.userData.angle=Math.random()*Math.PI*2;
-                
-                if (d.n === 'Experience') createExperienceTimeline(pG);
-                if (d.n === 'Education') createEducationDataStream(pG);
-                if (d.specialEffect === 'beacon') {
-                    const beaconGeo = new THREE.SphereGeometry(d.r + 1.5, 32, 32);
-                    const beaconMat = new THREE.MeshBasicMaterial({color: 0xaaccff, transparent: true, opacity: 0, blending: THREE.AdditiveBlending});
-                    const beacon = new THREE.Mesh(beaconGeo, beaconMat);
-                    pG.add(beacon);
-                    pG.userData.beacon = beacon;
-                }
-                if (d.specialEffect === 'aurora') {
-                    const auroraGeo = new THREE.SphereGeometry(d.r + 0.5, 32, 32);
-                    const auroraMat = new THREE.ShaderMaterial({
-                        ...AuroraShader,
-                        transparent: true,
-                        blending: THREE.AdditiveBlending,
-                        side: THREE.BackSide
-                    });
-                    const aurora = new THREE.Mesh(auroraGeo, auroraMat);
-                    pG.add(aurora);
-                    pG.userData.aurora = aurora;
-                }
-
-                scene.add(pG);
-                celestialObjects.set(d.n,pG);
-            });
-        }
-
-        function createAsteroidBelt() {
-            const aB=new THREE.Group(); const bO={iR:220,oR:250,th:15,c:2000}; for(let i=0;i<bO.c;i++){const g=new THREE.IcosahedronGeometry(Math.random()*0.5+0.1,0);const m=new THREE.MeshStandardMaterial({color:0x999999,flatShading:true,roughness:0.8});const r=new THREE.Mesh(g,m);const a=Math.random()*Math.PI*2;const rad=THREE.MathUtils.randFloat(bO.iR,bO.oR);r.position.set(Math.cos(a)*rad,(Math.random()-0.5)*bO.th,Math.sin(a)*rad);r.rotation.set(Math.random()*Math.PI,Math.random()*Math.PI,Math.random()*Math.PI);aB.add(r);} scene.add(aB); celestialObjects.set('AsteroidBelt',aB);
-        }
-        
-        function createComets(count) {
-            for (let i = 0; i < count; i++) {
-                const comet = new THREE.Group();
-                const headGeometry = new THREE.SphereGeometry(0.5, 16, 16);
-                const headMaterial = new THREE.MeshBasicMaterial({ color: 0xaaddff });
-                const head = new THREE.Mesh(headGeometry, headMaterial);
-                comet.add(head);
-                
-                const tailCanvas = document.createElement('canvas'); tailCanvas.width = 2; tailCanvas.height = 128; const tailContext = tailCanvas.getContext('2d'); const gradient = tailContext.createLinearGradient(0, 0, 0, 128); gradient.addColorStop(0, 'rgba(170, 221, 255, 0.5)'); gradient.addColorStop(1, 'rgba(170, 221, 255, 0)'); tailContext.fillStyle = gradient; tailContext.fillRect(0, 0, 2, 128);
-                const tailMaterial = new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(tailCanvas), transparent: true, side: THREE.DoubleSide, blending: THREE.AdditiveBlending });
-                const tail = new THREE.Mesh(new THREE.PlaneGeometry(1, 20), tailMaterial);
-                tail.position.z = -10; 
-                tail.rotation.x = Math.PI / 2;
-                comet.add(tail);
-                
-                resetComet(comet);
-                scene.add(comet);
-                comets.push(comet);
-            }
-        }
-
-        function resetComet(comet) {
-            const distance = THREE.MathUtils.randFloat(1500, 3000);
-            const angle = Math.random() * Math.PI * 2;
-            const height = THREE.MathUtils.randFloat(-500, 500);
-            
-            comet.position.set(Math.cos(angle) * distance, height, Math.sin(angle) * distance);
-            
-            const target = new THREE.Vector3(
-                THREE.MathUtils.randFloatSpread(1000),
-                THREE.MathUtils.randFloatSpread(500),
-                THREE.MathUtils.randFloatSpread(1000)
-            );
-
-            comet.userData.velocity = new THREE.Vector3()
-                .subVectors(target, comet.position)
-                .normalize()
-                .multiplyScalar(THREE.MathUtils.randFloat(2.0, 3.5));
-        }
-
-        function createCareerComet() {
-            careerComet = new THREE.Group();
-            const headGeometry = new THREE.SphereGeometry(2, 16, 16);
-            const headMaterial = new THREE.MeshBasicMaterial({ color: 0xffddaa });
-            const head = new THREE.Mesh(headGeometry, headMaterial);
-            careerComet.add(head);
-
-            const tailCanvas = document.createElement('canvas'); tailCanvas.width = 2; tailCanvas.height = 128; const tailContext = tailCanvas.getContext('2d'); const gradient = tailContext.createLinearGradient(0, 0, 0, 128); gradient.addColorStop(0, 'rgba(255, 220, 170, 0.7)'); gradient.addColorStop(1, 'rgba(255, 220, 170, 0)'); tailContext.fillStyle = gradient; tailContext.fillRect(0, 0, 2, 128);
-            const tailMaterial = new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(tailCanvas), transparent: true, side: THREE.DoubleSide, blending: THREE.AdditiveBlending });
-            const tail = new THREE.Mesh(new THREE.PlaneGeometry(3, 80), tailMaterial);
-            tail.position.z = -40; 
-            tail.rotation.x = Math.PI / 2;
-            careerComet.add(tail);
-
-            // Define the elliptical path
-            careerCometPath = new THREE.EllipseCurve(
-                0, 0,             // ax, aY
-                450, 300,         // xRadius, yRadius
-                0, 2 * Math.PI,   // aStartAngle, aEndAngle
-                false,            // aClockwise
-                Math.PI / 6       // aRotation
-            );
-            
-            scene.add(careerComet);
-        }
-
-        function createBlackHole() {
-            const blackHoleGroup = new THREE.Group();
-            blackHoleGroup.position.set(1000, 200, -800);
-
-            const sphere = new THREE.Mesh(new THREE.SphereGeometry(20, 32, 32), new THREE.MeshBasicMaterial({ color: 0x000000 }));
-            blackHoleGroup.add(sphere);
-
-            const diskPoints = []; const diskColors = [];
-            for (let i = 0; i < 5000; i++) {
-                const radius = THREE.MathUtils.randFloat(25, 70);
-                const angle = Math.random() * Math.PI * 2;
-                diskPoints.push(Math.cos(angle) * radius, (Math.random() - 0.5) * 6, Math.sin(angle) * radius);
-                const color = new THREE.Color();
-                color.setHSL(0.6 + (radius - 25) / 45 * 0.4, 1.0, 0.5);
-                diskColors.push(color.r, color.g, color.b);
-            }
-            const diskGeometry = new THREE.BufferGeometry();
-            diskGeometry.setAttribute('position', new THREE.Float32BufferAttribute(diskPoints, 3));
-            diskGeometry.setAttribute('color', new THREE.Float32BufferAttribute(diskColors, 3));
-            const diskMaterial = new THREE.PointsMaterial({ size: 0.6, vertexColors: true, blending: THREE.AdditiveBlending });
-            const disk = new THREE.Points(diskGeometry, diskMaterial);
-            disk.rotation.x = Math.PI / 3;
-            disk.userData.isDisk = true;
-            blackHoleGroup.add(disk);
-            celestialObjects.set('BlackHole', blackHoleGroup);
-            scene.add(blackHoleGroup);
-        }
-
-        // --- INTERACTION & ANIMATION ---
-        function travelTo(targetName, isInitialLoad = false) {
-            if (isWarping && !isInitialLoad) return;
-            isWarping = true;
-            
-            celestialObjects.forEach(obj => {
-                if (obj.userData.hologram) obj.userData.hologram.visible = false;
-                if (obj.userData.dataStream) obj.userData.dataStream.visible = false;
-                if (obj.name === "skillConstellation" || obj.name === "projectsField") obj.visible = false;
-            });
-
-            let finalCameraPos;
-            let targetObjectForTravel;
-            
-            if (targetName === 'FreeRoam') {
-                focusedObject = null;
-                finalCameraPos = new THREE.Vector3(0, 100, 500);
-            } else {
-                targetObjectForTravel = celestialObjects.get(targetName);
-                if (!targetObjectForTravel) { isWarping = false; return; }
-                
-                const targetPosition = new THREE.Vector3();
-                targetObjectForTravel.getWorldPosition(targetPosition);
-
-                let offsetVec;
-                if (targetName === 'Overview') {
-                    offsetVec = new THREE.Vector3(0, 80, 450);
-                } else if (targetName === 'Skills' || targetName === 'Projects') {
-                    offsetVec = new THREE.Vector3(0, 0, 80);
-                } else {
-                    const mainChild = targetObjectForTravel.type === 'Group' ? targetObjectForTravel.children[0] : targetObjectForTravel;
-                    const radius = mainChild.geometry.parameters.radius || 10;
-                    offsetVec = new THREE.Vector3(0, radius * 1.5, radius * 4);
-                }
-                
-                cameraOffset.copy(offsetVec);
-                finalCameraPos = new THREE.Vector3().copy(targetPosition).add(offsetVec);
-            }
-
-            // Animate nebulae during warp
-            new TWEEN.Tween(nebulaeGroup.rotation)
-                .to({ z: nebulaeGroup.rotation.z + 0.1 }, 2000)
-                .easing(TWEEN.Easing.Cubic.InOut)
-                .start();
-
-            new TWEEN.Tween(wormholePass.uniforms.progress)
-                .to({ value: 1 }, 1000)
-                .easing(TWEEN.Easing.Cubic.In)
-                .onComplete(() => {
-                    camera.position.copy(finalCameraPos);
-                    if (targetName !== 'FreeRoam') {
-                        focusedObject = targetObjectForTravel;
-                        if (focusedObject.userData.hologram) focusedObject.userData.hologram.visible = true;
-                        if (focusedObject.userData.dataStream) focusedObject.userData.dataStream.visible = true;
-                        if (targetName === 'Skills' || targetName === 'Projects') focusedObject.visible = true;
-                    }
-                    new TWEEN.Tween(wormholePass.uniforms.progress)
-                        .to({ value: 0 }, 1000)
-                        .easing(TWEEN.Easing.Cubic.Out)
-                        .onComplete(() => isWarping = false)
-                        .start();
-                })
-                .start();
-            
-            if (isInitialLoad) {
-                camera.position.copy(finalCameraPos);
-                if (targetName === 'Overview') {
-                        focusedObject = celestialObjects.get('Overview');
-                    setActiveNavItem('Overview');
-                    showDetails('Overview');
-                }
-                isWarping = false;
-                TWEEN.removeAll();
-                wormholePass.uniforms.progress.value = 0;
-            }
-        }
-
-        function setupEventListeners() {
-            window.addEventListener('resize', onWindowResize);
-            canvas.addEventListener('mousedown', onMouseDown);
-            canvas.addEventListener('mousemove', onMouseMove);
-            canvas.addEventListener('mouseup', onMouseUp);
-            canvas.addEventListener('mouseleave', onMouseUp);
-            canvas.addEventListener('wheel', onMouseWheel, { passive: false });
-            canvas.addEventListener('touchstart', onTouchStart, { passive: false });
-            canvas.addEventListener('touchmove', onTouchMove, { passive: false });
-            canvas.addEventListener('touchend', onTouchEnd);
-            canvas.addEventListener('click', onCanvasClick);
-            
-            navItems.forEach(item => {
-                item.addEventListener('click', () => {
-                    if (isWarping) return;
-                    const targetName = item.dataset.target;
-                    if (item.classList.contains('active')) {
-                        travelTo('FreeRoam');
-                        hideDetails();
-                        setActiveNavItem(null);
-                    } else {
-                        travelTo(targetName);
-                        showDetails(targetName);
-                        setActiveNavItem(targetName);
-                    }
-                });
-            });
-
-            closeButton.addEventListener('click', () => {
-                travelTo('FreeRoam');
-                hideDetails();
-                setActiveNavItem(null);
-            });
-        }
-        
-        function onMouseMove(event) {
-            if (!isDragging || isWarping) return;
-            const deltaX = event.clientX - previousMousePosition.x;
-            const deltaY = event.clientY - previousMousePosition.y;
-            const rotationSpeed = 0.005;
-            
-            if (focusedObject) {
-                const yAxis = new THREE.Vector3(0, 1, 0);
-                cameraOffset.applyAxisAngle(yAxis, -deltaX * rotationSpeed);
-                const xAxis = new THREE.Vector3().crossVectors(cameraOffset, yAxis).normalize();
-                cameraOffset.applyAxisAngle(xAxis, -deltaY * rotationSpeed);
-            } else {
-                const quaternion = new THREE.Quaternion().setFromEuler(new THREE.Euler(deltaY * 0.002, deltaX * 0.002, 0, 'YXZ'));
-                camera.quaternion.multiplyQuaternions(quaternion, camera.quaternion);
-            }
-            
-            previousMousePosition = { x: event.clientX, y: event.clientY };
-        };
-
-        function onCanvasClick(event) {
-            if (isWarping || !focusedObject || !focusedObject.userData.interactiveNodes) return;
-
-            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
-            raycaster.setFromCamera(mouse, camera);
-
-            const intersects = raycaster.intersectObjects(focusedObject.userData.interactiveNodes, true);
-
-            if (intersects.length > 0) {
-                const clickedNode = intersects[0].object;
-                
-                if (clickedNode.name === "experienceNode") {
-                    showExperienceSubDetail(clickedNode.userData.jobKey);
-                } else if (clickedNode.name === "skillNode") {
-                    showSkillSubDetail(clickedNode.userData.skillKey);
-                } else if (clickedNode.name === "projectNode") {
-                    showProjectSubDetail(clickedNode.userData.projectKey);
-                }
-            }
-        }
-
-        function showExperienceSubDetail(jobKey) {
-            const detailContainer = document.getElementById('experience-details-container');
-            if (detailContainer) detailContainer.innerHTML = resumeData.Experience[jobKey];
-            
-            const buttons = detailsContentContainer.querySelectorAll('.timeline-btn');
-            buttons.forEach(btn => btn.classList.toggle('active', btn.dataset.jobKey === jobKey));
-            
-            const experiencePlanet = celestialObjects.get('Experience');
-            if (experiencePlanet && experiencePlanet.userData.interactiveNodes) {
-                const nodeToPulse = experiencePlanet.userData.interactiveNodes.find(node => node.userData.jobKey === jobKey);
-                if (nodeToPulse) {
-                    new TWEEN.Tween(nodeToPulse.scale).to({ x: 1.5, y: 1.5, z: 1.5 }, 150).easing(TWEEN.Easing.Quadratic.InOut).yoyo(true).repeat(1).start();
-                }
-            }
-        }
-        
-        function showSkillSubDetail(skillKey) {
-            const skillData = resumeData.Skills[skillKey];
-            const detailContainer = document.getElementById('skills-details-container');
-            if (detailContainer) {
-                 detailContainer.innerHTML = `<h4>${skillData.title}</h4><p>${skillData.list.join(', ')}</p>`;
-            }
-
-            const buttons = detailsContentContainer.querySelectorAll('.skills-btn');
-            buttons.forEach(btn => btn.classList.toggle('active', btn.dataset.skillKey === skillKey));
-
-            const skillsConstellation = celestialObjects.get('Skills');
-            if (skillsConstellation && skillsConstellation.userData.interactiveNodes) {
-                // Clear previous sub-stars
-                skillsConstellation.userData.subStars.forEach(star => skillsConstellation.remove(star));
-                skillsConstellation.userData.subStars = [];
-
-                const mainStar = skillsConstellation.userData.interactiveNodes.find(node => node.userData.skillKey === skillKey);
-                if (!mainStar) return;
-
-                // Create and animate new sub-stars
-                const subStarMaterial = new THREE.SpriteMaterial({ map: Factory.createStarTexture(), color: 0xffffff, blending: THREE.AdditiveBlending, transparent: true, opacity: 0.8 });
-                const numSubStars = skillData.list.length;
-                const angleStep = (Math.PI * 1.5) / (numSubStars - 1);
-                
-                skillData.list.forEach((skill, i) => {
-                    const subStar = new THREE.Sprite(subStarMaterial.clone());
-                    subStar.scale.set(0,0,1); // Start invisible
-                    subStar.position.copy(mainStar.position);
-                    
-                    const angle = - (Math.PI * 0.25) - (angleStep * i);
-                    const radius = 25;
-                    const targetPos = new THREE.Vector3(
-                        mainStar.position.x + radius * Math.cos(angle),
-                        mainStar.position.y + radius * Math.sin(angle),
-                        mainStar.position.z
-                    );
-
-                    skillsConstellation.add(subStar);
-                    skillsConstellation.userData.subStars.push(subStar);
-
-                    new TWEEN.Tween(subStar.position)
-                        .to(targetPos, 500 + i * 50)
-                        .easing(TWEEN.Easing.Exponential.Out)
-                        .start();
-                    
-                    new TWEEN.Tween(subStar.scale)
-                        .to({x: 5, y: 5, z: 1}, 500 + i * 50)
-                        .easing(TWEEN.Easing.Exponential.Out)
-                        .start();
-                });
-            }
-        }
-
-        function showProjectSubDetail(projectKey) {
-            const detailContainer = document.getElementById('project-details-container');
-            if (detailContainer) detailContainer.innerHTML = resumeData.Projects[projectKey];
-
-            const buttons = detailsContentContainer.querySelectorAll('.project-btn');
-            buttons.forEach(btn => btn.classList.toggle('active', btn.dataset.projectKey === projectKey));
-
-            const projectsField = celestialObjects.get('Projects');
-            if (projectsField && projectsField.userData.interactiveNodes) {
-                const nodeToPulse = projectsField.userData.interactiveNodes.find(node => node.userData.projectKey === projectKey);
-                if (nodeToPulse) {
-                   new TWEEN.Tween(nodeToPulse.material)
-                        .to({ opacity: 0.5 }, 200)
-                        .easing(TWEEN.Easing.Quadratic.InOut)
-                        .yoyo(true)
-                        .repeat(1)
-                        .start();
-                }
-            }
-        }
-
-        function onWindowResize() { camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight); composer.setSize(window.innerWidth, window.innerHeight); wormholePass.uniforms.resolution.value.set(window.innerWidth, window.innerHeight); };
-        function onMouseDown(event) { if (isWarping) return; isDragging = true; canvas.classList.add('grabbing'); previousMousePosition = { x: event.clientX, y: event.clientY }; };
-        function onMouseUp() { isDragging = false; canvas.classList.remove('grabbing'); };
-        function onMouseWheel(event) { 
-            if (isWarping) return; 
-            event.preventDefault(); 
-            const zoomSpeed = 0.1; 
-            const direction = event.deltaY > 0 ? 1 : -1; 
-            if (focusedObject) { 
-                const distance = cameraOffset.length();
-                const newDistance = distance * (1 + direction * zoomSpeed);
-                if (newDistance > 10 && newDistance < 5000) { 
-                    cameraOffset.setLength(newDistance);
-                } 
-            } else { 
-                camera.translateZ(direction * 20); 
-            } 
-        };
-        function onTouchStart(event) { if (event.touches.length === 1) { onMouseDown({ clientX: event.touches[0].clientX, clientY: event.touches[0].clientY }); } };
-        function onTouchMove(event) { if (event.touches.length === 1) { onMouseMove({ clientX: event.touches[0].clientX, clientY: event.touches[0].clientY }); } };
-        function onTouchEnd() { onMouseUp(); };
-        
-        function showDetails(name) {
-            let content = resumeData[name];
-            let isInteractiveMain = false;
-            let interactiveType = '';
-
-            if (typeof content === 'object' && content !== null) {
-                content = content['main'];
-                if (name === 'Experience' || name === 'Skills' || name === 'Projects') {
-                    isInteractiveMain = true;
-                    interactiveType = name;
-                }
-            }
-            detailsContentContainer.innerHTML = content;
-            detailsPanel.classList.add('visible');
-
-            if (isInteractiveMain) {
-                if (interactiveType === 'Experience') {
-                    const buttons = detailsContentContainer.querySelectorAll('.timeline-btn');
-                    buttons.forEach(button => button.addEventListener('click', () => showExperienceSubDetail(button.dataset.jobKey)));
-                } else if (interactiveType === 'Skills') {
-                    const buttons = detailsContentContainer.querySelectorAll('.skills-btn');
-                    buttons.forEach(button => button.addEventListener('click', () => showSkillSubDetail(button.dataset.skillKey)));
-                } else if (interactiveType === 'Projects') {
-                    const buttons = detailsContentContainer.querySelectorAll('.project-btn');
-                    buttons.forEach(button => button.addEventListener('click', () => showProjectSubDetail(button.dataset.projectKey)));
-                }
-            }
-        };
-        function hideDetails() { detailsPanel.classList.remove('visible'); };
-        function setActiveNavItem(name) { navItems.forEach(item => { item.classList.toggle('active', item.dataset.target === name); }); };
-
-        function animate() {
-            requestAnimationFrame(animate);
-            const delta = clock.getDelta();
-            const elapsedTime = clock.getElapsedTime();
-            TWEEN.update();
-
-            const sun = celestialObjects.get('Sun');
-            if (sun && sun.userData.shader) {
-                sun.userData.shader.uniforms.time.value = elapsedTime;
-                sun.userData.corona.rotation.z += 0.001;
-                sun.userData.corona.material.opacity = 0.6 + Math.sin(elapsedTime * 0.5) * 0.2;
-            }
-
-            if (starfield) {
-                starfield.rotation.y += 0.00002;
-            }
-
-            nebulaeGroup.rotation.z += 0.0001;
-
-            if (careerComet && careerCometPath) {
-                const time = elapsedTime * 0.02;
-                const looptime = 1;
-                const t = (time % looptime) / looptime;
-                const point = careerCometPath.getPointAt(t);
-                
-                const next_t = ((time + 0.001) % looptime) / looptime;
-                const nextPoint = careerCometPath.getPointAt(next_t);
-
-                careerComet.position.set(point.x, 0, point.y);
-                careerComet.lookAt(new THREE.Vector3(nextPoint.x, 0, nextPoint.y));
-            }
-
-            celestialObjects.forEach((obj, name) => {
-                if (obj.userData.speed) {
-                    obj.userData.angle += obj.userData.speed * delta * 60;
-                    obj.position.x = Math.cos(obj.userData.angle) * obj.userData.orbit;
-                    obj.position.z = Math.sin(obj.userData.angle) * obj.userData.orbit;
-                    
-                    if (name === 'Projects') {
-                        obj.rotation.x += obj.userData.internalRotation.x;
-                        obj.rotation.y += obj.userData.internalRotation.y;
-                        obj.rotation.z += obj.userData.internalRotation.z;
-                    } else if (obj.children.length > 0) {
-                        obj.children[0].rotation.y += 0.005; 
-                        const cloud = obj.children.find(c => c.userData.isCloud);
-                        if(cloud) cloud.rotation.y += 0.004;
-                    }
-                } else if (name === 'BlackHole') {
-                    const disk = obj.children.find(c => c.userData.isDisk);
-                    if (disk) {
-                        disk.rotation.y += 0.002;
-                        disk.rotation.z -= 0.0005;
-                    }
-                } else if (name === 'Skills' && obj.visible) {
-                    obj.rotation.y += 0.0005;
-                    obj.rotation.x += 0.0002;
-                } else if (name === 'AsteroidBelt') {
-                    obj.rotation.y += 0.0001;
-                }
-
-                if (obj.userData.hologram && obj.userData.hologram.visible) {
-                    obj.userData.hologram.rotation.y += 0.005;
-                    obj.userData.interactiveNodes.forEach(node => {
-                        node.scale.y = 1 + Math.sin(elapsedTime * 2 + node.position.x) * 0.1;
-                    });
-                }
-                
-                if (obj.userData.dataStream && obj.userData.dataStream.visible) {
-                    const stream = obj.userData.dataStream.children[0];
-                    const isActive = focusedObject === obj && detailsPanel.classList.contains('visible');
-                    const speedMultiplier = isActive ? 1.5 : 0.5;
-                    stream.userData.time += delta * speedMultiplier;
-                    const positions = stream.geometry.attributes.position;
-                    for (let i = 0; i < positions.count; i++) {
-                        const angle = (i / positions.count) * Math.PI * 10 + stream.userData.time;
-                        positions.setY(i, Math.sin(angle * 2) * 5);
-                    }
-                    positions.needsUpdate = true;
-                    obj.userData.dataStream.rotation.y += 0.002;
-                }
-
-                if (obj.userData.beacon) {
-                    const beacon = obj.userData.beacon;
-                    const pulse = (Math.sin(elapsedTime * 1.5) + 1) / 2;
-                    beacon.material.opacity = pulse * 0.3;
-                    const scale = 1 + pulse * 0.2;
-                    beacon.scale.set(scale, scale, scale);
-                }
-
-                if (obj.userData.aurora) {
-                    obj.userData.aurora.material.uniforms.time.value = elapsedTime;
-                }
-            });
-            
-            comets.forEach(comet => {
-                comet.position.add(comet.userData.velocity.clone().multiplyScalar(delta * 60));
-                comet.lookAt(comet.position.clone().add(comet.userData.velocity));
-                if (comet.position.length() > 4000) resetComet(comet);
-            });
-
-            if (focusedObject) {
-                focusedObject.getWorldPosition(cameraTarget);
-                const desiredPosition = new THREE.Vector3().copy(cameraTarget).add(cameraOffset);
-                camera.position.lerp(desiredPosition, 0.1);
-                camera.lookAt(cameraTarget);
-            }
-
-            wormholePass.uniforms.time.value += delta;
-            composer.render();
-        }
-        
-        function init() {
-            scene = new THREE.Scene();
-            camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 20000);
-            raycaster = new THREE.Raycaster();
-            mouse = new THREE.Vector2();
-            
-            renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: true });
-            renderer.setSize(window.innerWidth, window.innerHeight);
-            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-
-            renderer.shadowMap.enabled = true;
-            renderer.shadowMap.type = THREE.PCFSoftShadowMap; 
-
-            renderer.toneMapping = THREE.ACESFilmicToneMapping;
-            renderer.toneMappingExposure = 1.0;
-
-            const ambientLight = new THREE.AmbientLight(0xffffff, 0.2);
-            scene.add(ambientLight);
-
-            createGalaxy();
-            createNebulae();
-            createSun();
-            createPlanets();
-            createSkillsConstellation();
-            createProjectNebula();
-            createCareerComet();
-            createComets(20);
-            createAsteroidBelt();
-            createBlackHole();
-
-            composer = new THREE.EffectComposer(renderer);
-            composer.addPass(new THREE.RenderPass(scene, camera));
-            
-            const bloomPass = new THREE.UnrealBloomPass(
-                new THREE.Vector2(window.innerWidth, window.innerHeight),
-                0.6, 
-                0.5, 
-                0.85 
-            );
-            composer.addPass(bloomPass);
-
-            wormholePass = new THREE.ShaderPass(WormholeShader);
-            wormholePass.uniforms.resolution.value.set(window.innerWidth, window.innerHeight);
-            composer.addPass(wormholePass);
-
-            travelTo('Overview', true); 
-
-            setupEventListeners();
-            animate();
-        }
-
-        init();
-    </script>
 </body>
 </html>
